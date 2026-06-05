@@ -14,7 +14,7 @@ const STATUS_PT = {
 
 function verificarAssinatura(body, assinaturaRecebida, secret) {
   if (!secret) return true;
-  const esperada = crypto.createHmac("sha256", secret).update(body).digest("base64");
+  const esperada = crypto.createHmac("sha256", secret).updhhate(body).digest("base64");
   return crypto.timingSafeEqual(Buffer.from(esperada), Buffer.from(assinaturaRecebida));
 }
 
@@ -30,7 +30,7 @@ async function enviarWhatsApp(mensagem) {
 }
 
 function formatarMensagem(dados) {
-  const t = dados.tracking || {};
+  const t = dados.msg?.tracking || dados.tracking || {};
   const statusMap = {InTransit:"Em transito",OutForDelivery:"Saiu para entrega",Delivered:"ENTREGUE!",Exception:"Problema/Retencao",Expired:"Expirado",Pending:"Aguardando"};
   const statusPt = statusMap[t.tag] || t.tag || "Atualizacao";
   const ultimo = (t.checkpoints || []).slice(-1)[0] || {};
