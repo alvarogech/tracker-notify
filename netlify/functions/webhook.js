@@ -57,6 +57,7 @@ exports.handler = async (event) => {
   }
   let dados;
   try { dados = JSON.parse(body); } catch { return { statusCode: 400, body: JSON.stringify({ error: "Invalid JSON" }) }; }
+    console.log("PAYLOAD:", JSON.stringify(dados));
   const evento = dados.event || "";
   if (!["tracking_update","tracking_delivered"].includes(evento)) {
     return { statusCode: 200, body: JSON.stringify({ status: "ignored" }) };
