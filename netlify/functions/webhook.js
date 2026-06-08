@@ -14,7 +14,7 @@ const STATUS_PT = {
 
 function verificarAssinatura(body, assinaturaRecebida, secret) {
   if (!secret) return true;
-  const esperada = crypto.createHmac("sha256", secret).updhhate(body).digest("base64");
+  const esperada = crypto.createHmac("sha256", secret).update(body).digest("base64");
   return crypto.timingSafeEqual(Buffer.from(esperada), Buffer.from(assinaturaRecebida));
 }
 
