@@ -4,52 +4,80 @@ const ENCOMENDAS = [
   { numero: "LZ415324508CN", nome: "Encomenda 3" },
 ];
 
-async function consultarCorreios(numero) {
-  const res = await fetch(
-    "https://api.linketrack.com/track/json?user=teste&token=1abcd00b2731640591ed3426a36540c8&codigo=" + numero,
-    { headers: { "Accept": "application/json" } }
-  );
-  if (!res.ok) throw new Error("Correios HTTP " + res.status);
-  return await res.json();
+const STATUS_PT = {
+  "NotFound":"Nao encontrado ainda","InTransit":"Em transito",
+  "Expired":"Rastreio expirado","Undelivered":"Nao entregue",
+  "Delivered":"ENTREGUE!","InfoReceived":"Informacao recebida",
+  "AvailablePickup":"Disponivel para retirada","OutForDelivery":"Saiu para entrega",
+  "AttemptFail":"Tentativa falhou","Exception":"Problema / Retencao",
+};
+
+async function consultarTracking(numeros) {
+  const apiKey = process.env.TRACK17_APIKEY;
+  const res = await fetch("https://api.17track.net/track/v2.2/gettrackinfo", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "17token": apiKey,
+    },
+    body: JSON.stringify(numeros.map(n => ({ number: n }))),
+  });
+  if (!res.ok) throw new Error("17track HTTP " + res.status);
+  const json = await res.json();
+  return json.data?.accepted || [];
 }
 
 async function enviarWhatsApp(msg) {
-  const phone = process.env.WHATSAPP_PHONE;
+  const phone  = process.env.WHATSAPP_PHONE;
   const apikey = process.env.CALLMEBOT_APIKEY;
   if (!phone || !apikey) return false;
-  const url = "https://api.callmebot.com/whatsapp.php?phone=" + encodeURIComponent(phone) + "&text=" + encodeURIComponent(msg) + "&apikey=" + encodeURIComponent(apikey);
+  const url = "https://api.callmebot.com/whatsapp.php" +
+    "?phone="  + encodeURIComponent(phone) +
+    "&text="   + encodeURIComponent(msg) +
+    "&apikey=" + encodeURIComponent(apikey);
   const r = await fetch(url);
   return r.ok;
 }
 
-function formatarMsg(nome, numero, dados) {
-  const eventos = dados.eventos || [];
-  const ultimo = eventos[0] || {};
-  const status = dados.status || "Em processamento";
+function formatarMsg(nome, numero, item) {
+  const tag      = item?.track_info?.latest_status?.status || "NotFound";
+  const statusPt = STATUS_PT[tag] || tag;
+  const eventos  = item?.track_info?.tracking?.providers?.[0]?.events || [];
+  const ultimo   = eventos[0] || {};
+  const detalhe  = ultimo.description || "";
+  const local    = ultimo.location    || "";
+  const data     = (ultimo.time_iso   || "").slice(0, 10);
   const linhas = [
     "STATUS ATUAL",
     "Encomenda: " + nome,
-    "Codigo: " + numero,
-    "Status: " + status,
+    "Codigo: "   + numero,
+    "Status: "   + statusPt,
   ];
-  if (ultimo.descricao) linhas.push("Detalhe: " + ultimo.descricao);
-  if (ultimo.local) linhas.push("Local: " + ultimo.local);
-  if (ultimo.data) linhas.push("Data: " + ultimo.data + " " + (ultimo.hora || ""));
+  if (local)   linhas.push("Local: "   + local);
+  if (detalhe) linhas.push("Detalhe: " + detalhe);
+  if (data)    linhas.push("Data: "    + data);
   return linhas.join("\n");
 }
 
 export const handler = async () => {
+  const numeros = ENCOMENDAS.map(e => e.numero);
+  let aceitos;
+  try {
+    aceitos = await consultarTracking(numeros);
+  } catch(e) {
+    return { statusCode: 500, body: JSON.stringify({ erro: e.message }) };
+  }
+
   const resultados = [];
   for (const enc of ENCOMENDAS) {
-    try {
-      const dados = await consultarCorreios(enc.numero);
-      const msg = formatarMsg(enc.nome, enc.numero, dados);
-      const sent = await enviarWhatsApp(msg);
-      resultados.push({ numero: enc.numero, status: dados.status, qtd_eventos: (dados.eventos||[]).length, whatsapp: sent });
-    } catch(e) {
-      resultados.push({ numero: enc.numero, erro: e.message });
-    }
+    const item = aceitos.find(a => a.number === enc.numero);
+    if (!item) { resultados.push({ numero: enc.numero, erro: "nao retornado" }); continue; }
+    const msg  = formatarMsg(enc.nome, enc.numero, item);
+    const sent = await enviarWhatsApp(msg);
+    const tag  = item?.track_info?.latest_status?.status || "NotFound";
+    resultados.push({ numero: enc.numero, status: tag, whatsapp: sent });
   }
+
   return {
     statusCode: 200,
     headers: { "Content-Type": "application/json" },
