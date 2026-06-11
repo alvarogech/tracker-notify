@@ -12,19 +12,15 @@ const STATUS_PT = {
   "AttemptFail":"Tentativa falhou","Exception":"Problema / Retencao",
 };
 
-async function consultarTracking(numeros) {
+async function api17(endpoint, body) {
   const apiKey = process.env.TRACK17_APIKEY;
-  const res = await fetch("https://api.17track.net/track/v2.2/gettrackinfo", {
+  const res = await fetch("https://api.17track.net/track/v2.2/" + endpoint, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "17token": apiKey,
-    },
-    body: JSON.stringify(numeros.map(n => ({ number: n }))),
+    headers: { "Content-Type": "application/json", "17token": apiKey },
+    body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error("17track HTTP " + res.status);
-  const json = await res.json();
-  return json.data?.accepted || [];
+  if (!res.ok) throw new Error(endpoint + " HTTP " + res.status);
+  return await res.json();
 }
 
 async function enviarWhatsApp(msg) {
@@ -32,8 +28,8 @@ async function enviarWhatsApp(msg) {
   const apikey = process.env.CALLMEBOT_APIKEY;
   if (!phone || !apikey) return false;
   const url = "https://api.callmebot.com/whatsapp.php" +
-    "?phone="  + encodeURIComponent(phone) +
-    "&text="   + encodeURIComponent(msg) +
+    "?phone=" + encodeURIComponent(phone) +
+    "&text="  + encodeURIComponent(msg) +
     "&apikey=" + encodeURIComponent(apikey);
   const r = await fetch(url);
   return r.ok;
@@ -61,9 +57,20 @@ function formatarMsg(nome, numero, item) {
 
 export const handler = async () => {
   const numeros = ENCOMENDAS.map(e => e.numero);
-  let aceitos;
+
+  // Passo 1: Registrar os codigos (necessario antes de consultar)
   try {
-    aceitos = await consultarTracking(numeros);
+    await api17("register", numeros.map(n => ({ number: n })));
+  } catch(e) {
+    // Ignorar erros de registro — podem ja estar registrados
+    console.log("Register:", e.message);
+  }
+
+  // Passo 2: Consultar status
+  let aceitos = [];
+  try {
+    const json = await api17("gettrackinfo", numeros.map(n => ({ number: n })));
+    aceitos = json.data?.accepted || [];
   } catch(e) {
     return { statusCode: 500, body: JSON.stringify({ erro: e.message }) };
   }
@@ -71,10 +78,13 @@ export const handler = async () => {
   const resultados = [];
   for (const enc of ENCOMENDAS) {
     const item = aceitos.find(a => a.number === enc.numero);
-    if (!item) { resultados.push({ numero: enc.numero, erro: "nao retornado" }); continue; }
-    const msg  = formatarMsg(enc.nome, enc.numero, item);
+    if (!item) {
+      resultados.push({ numero: enc.numero, info: "registrado, aguardando primeiro sync (pode levar alguns minutos)" });
+      continue;
+    }
+    const tag = item?.track_info?.latest_status?.status || "NotFound";
+    const msg = formatarMsg(enc.nome, enc.numero, item);
     const sent = await enviarWhatsApp(msg);
-    const tag  = item?.track_info?.latest_status?.status || "NotFound";
     resultados.push({ numero: enc.numero, status: tag, whatsapp: sent });
   }
 
