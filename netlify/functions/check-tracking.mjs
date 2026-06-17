@@ -59,14 +59,14 @@ function formatarMsg(nome, numero, item) {
 
 export default async function handler() {
   console.log("Verificando rastreios...");
-  const store  = getStore("tracking-status");
+  const store   = getStore("tracking-status");
   const numeros = ENCOMENDAS.map(e => e.numero);
 
-  // Registrar codigos (necessario na primeira vez)
+  // Registrar (necessario na primeira vez, ignorar erros)
   try {
     await api17("register", numeros.map(n => ({ number: n })));
   } catch(e) {
-    console.log("Register (pode ja estar registrado):", e.message);
+    console.log("Register:", e.message);
   }
 
   // Consultar status atual
@@ -75,29 +75,35 @@ export default async function handler() {
     const json = await api17("gettrackinfo", numeros.map(n => ({ number: n })));
     aceitos = json.data?.accepted || [];
   } catch(e) {
-    console.error("Erro ao consultar 17track:", e.message);
+    console.error("Erro ao consultar:", e.message);
     return;
   }
 
   for (const enc of ENCOMENDAS) {
     const item = aceitos.find(a => a.number === enc.numero);
-    if (!item) { console.log(enc.numero + ": ainda sem dados"); continue; }
+    if (!item) { console.log(enc.numero + ": sem dados ainda"); continue; }
 
-    const tag         = item?.track_info?.latest_status?.status || "NotFound";
-    const ultimoEvento = item?.track_info?.tracking?.providers?.[0]?.events?.[0]?.description || "";
-    const chave       = "status_" + enc.numero;
+    const tag      = item?.track_info?.latest_status?.status || "NotFound";
+    const eventos  = item?.track_info?.tracking?.providers?.[0]?.events || [];
+    const ultimo   = eventos[0] || {};
+    // Usar time_iso como chave de comparacao — muda a cada novo checkpoint
+    const ultimoTime = ultimo.time_iso || "";
+    const chave    = "status_" + enc.numero;
 
     let salvo = null;
     try { salvo = await store.get(chave, { type: "json" }); } catch {}
 
-    const mudou = tag !== salvo?.status || ultimoEvento !== salvo?.evento;
-    console.log(enc.numero + ": " + salvo?.status + " -> " + tag + " | mudou: " + mudou);
+    const statusMudou = tag !== salvo?.status;
+    const eventoNovo  = ultimoTime !== salvo?.ultimoTime;
+    const mudou = statusMudou || eventoNovo;
+
+    console.log(enc.numero + ": status=" + tag + " | time=" + ultimoTime.slice(0,16) + " | mudou=" + mudou);
 
     if (mudou && tag !== "NotFound") {
       const msg = formatarMsg(enc.nome, enc.numero, item);
-      await enviarWhatsApp(msg);
-      await store.setJSON(chave, { status: tag, evento: ultimoEvento });
-      console.log(enc.numero + ": notificado");
+      const sent = await enviarWhatsApp(msg);
+      await store.setJSON(chave, { status: tag, ultimoTime, evento: ultimo.description || "" });
+      console.log(enc.numero + ": notificado whatsapp=" + sent);
     }
   }
 
