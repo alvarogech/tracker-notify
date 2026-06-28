@@ -1,0 +1,44 @@
+# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# Testing
+/coverage
+/playwright-report
+/test-results
+
+# Next.js
+/.next/
+/out/
+
+# Production
+/build
+
+# Misc
+.DS_Store
+*.pem
+Thumbs.db
+
+# Local env files — NUNCA commitar
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Supabase local
+supabase/.branches
+supabase/.temp
+supabase/.env
+
+# pnpm
+pnpm-debug.log

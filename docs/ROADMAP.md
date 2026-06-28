@@ -9,18 +9,53 @@
 **Objetivo:** Base sólida antes de qualquer funcionalidade.
 
 Entregas:
-- [x] Inspeção do repositório
-- [x] `CLAUDE.md`
-- [x] Documentação em `/docs`
-- [x] `.env.example`
-- [ ] Configuração do projeto Next.js + TypeScript + Tailwind
-- [ ] Configuração de ESLint, Prettier
-- [ ] Configuração de Vitest e Playwright
-- [ ] Configuração do Supabase CLI local
-- [ ] Script `pnpm check-all`
-- [ ] CI inicial (GitHub Actions)
+- [x] Inspeção e limpeza do repositório (remoção do tracker-notify)
+- [x] `CLAUDE.md` com regras permanentes
+- [x] Documentação completa em `/docs`
+- [x] `.env.example` (Supabase + WhatsApp)
+- [x] Configuração do projeto Next.js 14 + TypeScript estrito + Tailwind CSS
+- [x] Configuração de ESLint, Prettier
+- [x] Configuração de Vitest e Playwright (pt-BR, America/Sao_Paulo)
+- [x] Configuração do Supabase CLI local (`supabase/config.toml`)
+- [x] Script `pnpm check-all`
+- [x] Componentes de marca: `HuiosLogo`, `HuiosAppIcon`, `EmausLogo`, `AppBrandHeader`, `InstitutionalFooter`
+- [x] Componentes UI base: Button, Input, Label, Card, Badge, Separator
+- [x] Assets SVG: `huios-mark.svg`, `huios-mark-on-green.svg`, `favicon.svg`, `huios-wordmark-placeholder.svg`
+- [x] PWA: `manifest.json`, favicon SVG
+- [x] Tokens de cor HUIOS mapeados ao sistema shadcn/ui
+- [x] `pnpm typecheck` — zero erros
+- [x] `pnpm build` — build de produção ok
+- [x] `docs/BRAND_GUIDELINES.md` e `docs/WHATSAPP_INTEGRATION.md`
 
-**Resultado atual:** Documentação criada. Aguardando aprovação para configuração do projeto.
+**Resultado:** Fase 0 concluída. Próximo: Fase A (dados WhatsApp) → Fase 1 (Autenticação).
+
+---
+
+### Fase A — WhatsApp: Dados
+
+**Objetivo:** Adicionar campos necessários para notificações WhatsApp ao modelo de dados.
+
+Entregas:
+- [ ] Migration: `whatsapp_phone`, `whatsapp_notifications_enabled`, `whatsapp_opt_in_at`, `whatsapp_opt_out_at` em `profiles`
+- [ ] Migration: `scheduled_end_time`, `timezone` em `groups`
+- [ ] Migration: `scheduled_end_at`, `whatsapp_reminder_due_at` em `meetings`
+- [ ] Migration: tabela `notifications` com idempotência `UNIQUE(meeting_id, user_id, notification_type, channel)`
+- [ ] RLS para `notifications`
+
+---
+
+### Fase B — WhatsApp: MessagingProvider
+
+**Objetivo:** Abstração de provedor de mensageria com mock funcional.
+
+Entregas:
+- [ ] `lib/messaging/types.ts`
+- [ ] `lib/messaging/provider.ts` — interface `MessagingProvider`
+- [ ] `lib/messaging/providers/mock.ts` — logs no terminal
+- [ ] `lib/messaging/providers/meta-whatsapp.ts` — Meta Cloud API
+- [ ] `lib/messaging/factory.ts` — seleção por env var
+- [ ] `lib/messaging/templates/meeting-report-reminder.ts`
+- [ ] Testes unitários do MockProvider
 
 ---
 

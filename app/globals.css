@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ============================================================
+       HUIOS Brand Tokens
+       Derivados das imagens oficiais de marca da HUIOS / Igreja Emaús.
+       Confirmar valores exatos com o manual de marca oficial.
+    ============================================================ */
+
+    /* Verde principal: #0A6B47 */
+    --huios-green: 156 83% 23%;
+    /* Verde escuro / background dark: #0D2825 */
+    --huios-dark: 174 50% 10%;
+    /* Creme / off-white: #EDE8D8 */
+    --huios-cream: 40 33% 89%;
+
+    /* ============================================================
+       shadcn/ui System Tokens — mapeados para a identidade HUIOS
+    ============================================================ */
+
+    --background: 0 0% 100%;
+    --foreground: 174 50% 8%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 174 50% 8%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 174 50% 8%;
+
+    /* Primária = verde HUIOS */
+    --primary: 156 83% 23%;
+    --primary-foreground: 40 33% 89%;
+
+    --secondary: 156 20% 95%;
+    --secondary-foreground: 156 83% 18%;
+
+    --muted: 210 20% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    /* Accent = creme suave */
+    --accent: 40 33% 96%;
+    --accent-foreground: 174 50% 10%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 214 20% 90%;
+    --input: 214 20% 90%;
+    --ring: 156 83% 23%;
+
+    --radius: 0.75rem;
+
+    /* ============================================================
+       Status Tokens — usam cor + ícone, nunca só cor
+    ============================================================ */
+    --status-success: 156 83% 23%;       /* verde HUIOS */
+    --status-warning: 38 92% 50%;        /* âmbar */
+    --status-danger: 0 84% 60%;          /* vermelho */
+    --status-info: 217 91% 60%;          /* azul */
+  }
+
+  .dark {
+    --background: 174 50% 5%;
+    --foreground: 40 33% 94%;
+
+    --card: 174 50% 8%;
+    --card-foreground: 40 33% 94%;
+
+    --popover: 174 50% 6%;
+    --popover-foreground: 40 33% 94%;
+
+    --primary: 156 60% 35%;
+    --primary-foreground: 174 50% 6%;
+
+    --secondary: 174 30% 14%;
+    --secondary-foreground: 40 33% 90%;
+
+    --muted: 174 30% 14%;
+    --muted-foreground: 40 20% 65%;
+
+    --accent: 174 30% 14%;
+    --accent-foreground: 40 33% 90%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 174 30% 16%;
+    --input: 174 30% 16%;
+    --ring: 156 60% 35%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* Touch targets mínimos para mobile (44×44px) */
+  button,
+  [role='button'],
+  a {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  button:not([class*='min-h']),
+  [role='button']:not([class*='min-h']) {
+    min-height: 44px;
+  }
+}

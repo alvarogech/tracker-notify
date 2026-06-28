@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="HUIOS">
+  <title>Pastoreio HUIOS</title>
+  <rect width="100" height="100" rx="22" fill="#0A6B47"/>
+  <rect x="10" y="12" width="14" height="76" rx="2" fill="#EDE8D8"/>
+  <rect x="42" y="12" width="14" height="76" rx="2" fill="#EDE8D8"/>
+  <rect x="10" y="46" width="46" height="13" rx="2" fill="#EDE8D8"/>
+  <circle cx="72" cy="20" r="7" fill="#EDE8D8"/>
+  <rect x="66" y="33" width="13" height="55" rx="6.5" fill="#EDE8D8"/>
+</svg>

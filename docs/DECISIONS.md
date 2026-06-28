@@ -41,31 +41,54 @@ Registro de decisões de arquitetura e produto. Atualizar sempre que uma decisã
 **Decisão:** Aptidão para servir e para liderar são calculadas dinamicamente a partir dos `training_records`, não armazenadas como campo redundante.
 **Motivo:** Evita inconsistência entre o status registrado e o calculado. Mais simples de manter.
 
+### DEC-008 — Remoção do código tracker-notify
+**Data:** 2026-06-28
+**Decisão:** Código do serviço tracker-notify (rastreio de encomendas) removido completamente via `git rm`. Histórico de commits preservado.
+**Motivo:** O repositório é reutilizado para o Pastoreio HUIOS; o código anterior era de escopo completamente diferente.
+
+### DEC-009 — Next.js 14
+**Data:** 2026-06-28
+**Decisão:** Next.js 14 (App Router).
+**Motivo:** App Router maduro, ampla documentação, `@supabase/ssr` tem suporte consolidado para Next.js 14.
+
+### DEC-010 — shadcn/ui
+**Data:** 2026-06-28
+**Decisão:** shadcn/ui com Radix UI para componentes de interface.
+**Motivo:** Acessível por padrão, componentes copiados para o projeto (sem lock-in), integra nativamente com Tailwind CSS. Tokens de cor mapeados para a identidade HUIOS.
+
+### DEC-011 — Supabase Keys
+**Data:** 2026-06-28
+**Decisão:** Keys do Supabase ainda não existem. Configuração via `.env.local` quando o projeto for criado. Desenvolvimento local usa `supabase start`.
+**Motivo:** Fase 1 criará o projeto Supabase. Fase 0 documenta apenas o contrato de variáveis.
+
+### DEC-012 — Vitest para testes unitários
+**Data:** 2026-06-28
+**Decisão:** Vitest.
+**Motivo:** Melhor integração com ESM e Next.js, mais rápido que Jest, mesma API.
+
+### DEC-013 — WhatsApp via MessagingProvider
+**Data:** 2026-06-28
+**Decisão:** Abstração `MessagingProvider` com implementações `MockWhatsAppProvider` (dev) e `MetaWhatsAppCloudProvider` (produção), selecionadas por `WHATSAPP_PROVIDER` env var.
+**Motivo:** Permite desenvolvimento e testes sem dependência de conta Meta. Isolamento do provedor facilita eventual troca ou extensão.
+
+### DEC-014 — Consentimento WhatsApp padrão desativado
+**Data:** 2026-06-28
+**Decisão:** `whatsapp_notifications_enabled` inicia como `false`. Líder ativa explicitamente nas configurações.
+**Motivo:** Privacidade e conformidade. Não enviar mensagens sem consentimento explícito.
+
+### DEC-015 — Idempotência de notificações
+**Data:** 2026-06-28
+**Decisão:** `UNIQUE (meeting_id, user_id, notification_type, channel)` na tabela `notifications`.
+**Motivo:** Garante que falhas de job/retry não gerem mensagens duplicadas ao líder.
+
+### DEC-016 — next.config.mjs em vez de .ts
+**Data:** 2026-06-28
+**Decisão:** Usar `next.config.mjs` (Next.js 14 não suporta `.ts`).
+**Motivo:** Next.js 14 só aceita `next.config.js` ou `next.config.mjs`.
+
 ---
 
 ## Decisões Pendentes
 
-### PEND-001 — Remoção do código tracker-notify
-**Questão:** O código existente do tracker-notify (serviço de rastreio de encomendas) deve ser removido do repositório?
-**Impacto:** Estrutura do repositório. Os commits históricos ficam preservados no git independentemente.
-**Status:** Aguardando decisão do responsável pelo produto.
+Nenhuma pendência em aberto no momento.
 
-### PEND-002 — Versão do Next.js
-**Questão:** Next.js 14 (estável, App Router maduro) ou 15 (mais recente)?
-**Consideração:** Next.js 15 traz React 19 e melhorias de performance, mas pode ter arestas em algumas integrações.
-**Status:** Aguardando decisão.
-
-### PEND-003 — Componentes UI
-**Questão:** Usar shadcn/ui (acessível, baseado em Radix UI, sem lock-in) ou construir do zero com Tailwind?
-**Recomendação:** shadcn/ui — agiliza o desenvolvimento sem criar dependência de biblioteca proprietária, e os componentes são copiados para o projeto.
-**Status:** Aguardando decisão.
-
-### PEND-004 — Projeto Supabase de Desenvolvimento
-**Questão:** A URL e as keys do Supabase de desenvolvimento já estão disponíveis ou serão criadas no início da Fase 1?
-**Impacto:** Necessário para Fase 1. Localmente pode usar Supabase CLI.
-**Status:** Aguardando informação.
-
-### PEND-005 — Testes Unitários
-**Questão:** Vitest ou Jest?
-**Recomendação:** Vitest — melhor integração com ESM e Next.js, mais rápido.
-**Status:** Aguardando decisão.

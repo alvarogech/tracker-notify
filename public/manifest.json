@@ -1,0 +1,18 @@
+{
+  "name": "Pastoreio HUIOS",
+  "short_name": "HUIOS",
+  "description": "Ferramenta interna de apoio ao pastoreio da rede HUIOS — Igreja Emaús",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0D2825",
+  "theme_color": "#0A6B47",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/brand/huios-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 70" role="img" aria-label="HUIOS">
+  <title>HUIOS — Wordmark (placeholder)</title>
+  <!--
+    ARQUIVO PROVISÓRIO
+    Substituir pelo vetor oficial da HUIOS quando disponível.
+    Ver docs/BRAND_GUIDELINES.md para especificações.
+    Fonte aproximada: Outfit ExtraBold / Black
+    Cor original: #EDE8D8 (creme) sobre #0A6B47 (verde HUIOS)
+  -->
+  <rect width="320" height="70" fill="transparent"/>
+  <!-- H -->
+  <rect x="0" y="0" width="14" height="68" rx="2" fill="currentColor"/>
+  <rect x="42" y="0" width="14" height="68" rx="2" fill="currentColor"/>
+  <rect x="0" y="27" width="56" height="14" rx="2" fill="currentColor"/>
+  <!-- U -->
+  <rect x="68" y="0" width="14" height="52" rx="2" fill="currentColor"/>
+  <rect x="110" y="0" width="14" height="52" rx="2" fill="currentColor"/>
+  <rect x="68" y="52" width="56" height="14" rx="8" fill="currentColor"/>
+  <!-- i (minúsculo) -->
+  <circle cx="148" cy="10" r="8" fill="currentColor"/>
+  <rect x="143" y="24" width="12" height="44" rx="6" fill="currentColor"/>
+  <!-- O -->
+  <path d="M 176 34 a 28 34 0 1 1 56 0 a 28 34 0 1 1 -56 0" fill="none" stroke="currentColor" stroke-width="14"/>
+  <!-- S -->
+  <path d="M 260 14 Q 260 2 280 2 Q 316 2 316 22 Q 316 38 280 40 Q 258 42 258 56 Q 258 68 282 68 Q 306 68 316 56" fill="none" stroke="currentColor" stroke-width="14" stroke-linecap="round"/>
+</svg>
