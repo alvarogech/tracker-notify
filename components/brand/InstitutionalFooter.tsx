@@ -24,31 +24,21 @@ export function InstitutionalFooter({
         className
       )}
     >
-      <div className="flex flex-col items-center gap-2">
-        <div className="flex items-center gap-2">
-          <span
-            className={cn(
-              'font-brand font-black text-sm tracking-tight',
-              isDark ? 'text-huios-cream/60' : 'text-muted-foreground'
-            )}
-          >
-            Pastoreio HUIOS
-          </span>
-          <span className={isDark ? 'text-huios-cream/30' : 'text-muted-foreground/50'}>·</span>
-          <EmausLogo
-            variant={isDark ? 'light' : 'default'}
-            size="xs"
-            className={isDark ? 'opacity-60' : 'opacity-50'}
-          />
-        </div>
-        <p
+      <div className="flex items-center gap-2">
+        <span
           className={cn(
-            'text-xs',
-            isDark ? 'text-huios-cream/30' : 'text-muted-foreground/60'
+            'font-brand font-black text-sm tracking-tight',
+            isDark ? 'text-huios-cream/60' : 'text-muted-foreground'
           )}
         >
-          Uma rede da Igreja Emaús · Uso interno
-        </p>
+          Pastoreio HUIOS
+        </span>
+        <span className={isDark ? 'text-huios-cream/30' : 'text-muted-foreground/50'}>·</span>
+        <EmausLogo
+          variant={isDark ? 'light' : 'default'}
+          size="xs"
+          className={isDark ? 'opacity-60' : 'opacity-50'}
+        />
       </div>
     </footer>
   )
