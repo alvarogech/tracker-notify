@@ -20,9 +20,6 @@ export default function HomePage() {
         {/* Marca institucional Emaús */}
         <div className="flex flex-col items-center gap-2">
           <EmausLogo variant="light" size="sm" />
-          <p className="text-huios-cream/40 text-xs tracking-widest uppercase">
-            Uma rede da Igreja Emaús
-          </p>
         </div>
 
         {/* Status de desenvolvimento */}
