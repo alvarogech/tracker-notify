@@ -28,8 +28,15 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
   const path = request.nextUrl.pathname
+
+  let user = null
+  try {
+    const { data } = await supabase.auth.getUser()
+    user = data.user
+  } catch {
+    // Supabase indisponível — tratar como não autenticado
+  }
   const isPublic = PUBLIC_ROUTES.some((r) => path.startsWith(r))
 
   // Rota pública + usuário logado → redireciona para a área correta
