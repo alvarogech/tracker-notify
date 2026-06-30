@@ -1,7 +1,9 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const PUBLIC_ROUTES = ['/login', '/recuperar-senha', '/acesso-desativado']
+const PUBLIC_ROUTES = ['/login', '/recuperar-senha']
+// /acesso-desativado é separado: usuário logado pode ficar lá sem ser redirecionado
+const ALWAYS_PUBLIC = ['/acesso-desativado']
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request: { headers: request.headers } })
@@ -11,24 +13,26 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value
+        getAll() {
+          return request.cookies.getAll()
         },
-        set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({ name, value, ...options })
-          response = NextResponse.next({ request: { headers: request.headers } })
-          response.cookies.set({ name, value, ...options })
-        },
-        remove(name: string, options: CookieOptions) {
-          request.cookies.set({ name, value: '', ...options })
-          response = NextResponse.next({ request: { headers: request.headers } })
-          response.cookies.set({ name, value: '', ...options })
+        setAll(cookiesToSet: { name: string; value: string; options?: CookieOptions }[]) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          response = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options as Parameters<typeof response.cookies.set>[2])
+          )
         },
       },
     }
   )
 
   const path = request.nextUrl.pathname
+
+  // Rotas sempre acessíveis — não redirecionar independente de sessão
+  if (ALWAYS_PUBLIC.some((r) => path.startsWith(r))) {
+    return response
+  }
 
   let user = null
   try {
@@ -37,6 +41,7 @@ export async function middleware(request: NextRequest) {
   } catch {
     // Supabase indisponível — tratar como não autenticado
   }
+
   const isPublic = PUBLIC_ROUTES.some((r) => path.startsWith(r))
 
   // Rota pública + usuário logado → redireciona para a área correta
@@ -47,13 +52,16 @@ export async function middleware(request: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    if (!profile?.active) {
+    // Se não conseguiu ler o perfil, deixa passar para o Server Component tratar
+    if (!profile) return response
+
+    if (!profile.active) {
       return NextResponse.redirect(new URL('/acesso-desativado', request.url))
     }
 
     const dest =
-      profile?.role === 'admin' ? '/admin' :
-      profile?.role === 'coordinator' ? '/coordenacao' :
+      profile.role === 'admin' ? '/admin' :
+      profile.role === 'coordinator' ? '/coordenacao' :
       '/inicio'
 
     return NextResponse.redirect(new URL(dest, request.url))

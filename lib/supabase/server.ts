@@ -1,12 +1,18 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
+import type { CookieOptions } from '@supabase/ssr'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import type { Database } from './types'
 
-/**
- * Cliente Supabase para uso no servidor (anon key + cookies).
- * Para operações administrativas com service_role, usar apenas em
- * Server Actions protegidas — nunca expor ao cliente.
- */
+/** Cliente admin com service_role — usar apenas em Server Actions protegidas, nunca no browser. */
+export function createAdminClient() {
+  return createSupabaseClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+}
+
 export function createClient() {
   const cookieStore = cookies()
 
@@ -15,21 +21,16 @@ export function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
+        getAll() {
+          return cookieStore.getAll()
         },
-        set(name: string, value: string, options: CookieOptions) {
+        setAll(cookiesToSet: { name: string; value: string; options?: CookieOptions }[]) {
           try {
-            cookieStore.set({ name, value, ...options })
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options as Parameters<typeof cookieStore.set>[2])
+            )
           } catch {
-            // Chamado de Server Component — cookies serão manipulados pelo middleware
-          }
-        },
-        remove(name: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value: '', ...options })
-          } catch {
-            // Chamado de Server Component
+            // Chamado de Server Component — cookies manipulados pelo middleware
           }
         },
       },

@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import type { UserProfile, UserRole } from './types'
 import { redirect } from 'next/navigation'
 
@@ -7,7 +7,9 @@ export async function getCurrentProfile(): Promise<UserProfile | null> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const { data } = await supabase
+  // Usa admin client para evitar recursão infinita nas policies RLS de profiles
+  const admin = createAdminClient()
+  const { data } = await admin
     .from('profiles')
     .select('id, full_name, email, role, active')
     .eq('id', user.id)

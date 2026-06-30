@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { loginSchema } from '@/lib/validations/auth'
 import { redirect } from 'next/navigation'
 import { redirectAfterLogin } from '@/lib/auth/server'
@@ -27,7 +27,8 @@ export async function loginAction(_: unknown, formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Erro ao autenticar.' }
 
-  const { data } = await supabase
+  const admin = createAdminClient()
+  const { data } = await admin
     .from('profiles')
     .select('role, active')
     .eq('id', user.id)

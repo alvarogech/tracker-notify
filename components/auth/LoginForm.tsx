@@ -1,11 +1,11 @@
 'use client'
 
-import { useFormState, useFormStatus } from 'react-dom'
-import { loginAction } from '@/app/(auth)/login/actions'
+import { useFormStatus } from 'react-dom'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 
 function SubmitButton() {
   const { pending } = useFormStatus()
@@ -17,10 +17,11 @@ function SubmitButton() {
 }
 
 export function LoginForm() {
-  const [state, action] = useFormState(loginAction, null)
+  const searchParams = useSearchParams()
+  const error = searchParams.get('error')
 
   return (
-    <form action={action} className="space-y-5">
+    <form action="/api/auth/login" method="POST" className="space-y-5">
       <div className="space-y-2">
         <Label htmlFor="email" className="text-huios-cream/80">
           E-mail
@@ -59,8 +60,8 @@ export function LoginForm() {
         />
       </div>
 
-      {state?.error && (
-        <p className="text-sm text-red-400 text-center">{state.error}</p>
+      {error && (
+        <p className="text-sm text-red-400 text-center">{decodeURIComponent(error)}</p>
       )}
 
       <SubmitButton />
