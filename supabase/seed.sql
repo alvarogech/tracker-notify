@@ -120,3 +120,70 @@ INSERT INTO group_relationships (person_id, group_id, type, status) VALUES
   ('30000000-0000-0000-0000-000000000028', '20000000-0000-0000-0000-000000000005', 'member', 'active'),
   ('30000000-0000-0000-0000-000000000029', '20000000-0000-0000-0000-000000000005', 'member', 'active'),
   ('30000000-0000-0000-0000-000000000030', '20000000-0000-0000-0000-000000000005', 'visitor','active');
+
+-- ============================================================
+-- Reuniões e frequência — GR Norte (Fase 3)
+-- Datas no passado para demonstrar o sistema
+-- ============================================================
+
+-- Reunião 1: 5 semanas atrás — relatório enviado
+INSERT INTO meetings (id, group_id, scheduled_at, status, report_submitted_at, notes) VALUES
+  ('40000000-0000-0000-0000-000000000001',
+   '20000000-0000-0000-0000-000000000001',
+   now() - interval '35 days',
+   'completed',
+   now() - interval '35 days' + interval '2 hours',
+   'Estudo sobre comunidade');
+
+INSERT INTO attendance_records (meeting_id, person_id, status) VALUES
+  ('40000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001', 'present'),
+  ('40000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000002', 'present'),
+  ('40000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000003', 'present'),
+  ('40000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000004', 'absent'),
+  ('40000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000005', 'present');
+
+-- Reunião 2: 4 semanas atrás — relatório enviado
+INSERT INTO meetings (id, group_id, scheduled_at, status, report_submitted_at) VALUES
+  ('40000000-0000-0000-0000-000000000002',
+   '20000000-0000-0000-0000-000000000001',
+   now() - interval '28 days',
+   'completed',
+   now() - interval '28 days' + interval '3 hours');
+
+INSERT INTO attendance_records (meeting_id, person_id, status) VALUES
+  ('40000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000001', 'present'),
+  ('40000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000002', 'excused'),
+  ('40000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000003', 'present'),
+  ('40000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000004', 'absent'),
+  ('40000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000005', 'on_leave');
+
+-- Reunião 3: 3 semanas atrás — cancelada
+INSERT INTO meetings (id, group_id, scheduled_at, status, notes) VALUES
+  ('40000000-0000-0000-0000-000000000003',
+   '20000000-0000-0000-0000-000000000001',
+   now() - interval '21 days',
+   'cancelled',
+   'Cancelada — feriado local');
+
+-- Reunião 4: 2 semanas atrás — relatório enviado
+-- Fernanda (004) agora tem 2 ausências seguidas → flag pastoral
+INSERT INTO meetings (id, group_id, scheduled_at, status, report_submitted_at) VALUES
+  ('40000000-0000-0000-0000-000000000004',
+   '20000000-0000-0000-0000-000000000001',
+   now() - interval '14 days',
+   'completed',
+   now() - interval '14 days' + interval '4 hours');
+
+INSERT INTO attendance_records (meeting_id, person_id, status) VALUES
+  ('40000000-0000-0000-0000-000000000004', '30000000-0000-0000-0000-000000000001', 'present'),
+  ('40000000-0000-0000-0000-000000000004', '30000000-0000-0000-0000-000000000002', 'present'),
+  ('40000000-0000-0000-0000-000000000004', '30000000-0000-0000-0000-000000000003', 'absent'),
+  ('40000000-0000-0000-0000-000000000004', '30000000-0000-0000-0000-000000000004', 'absent'),
+  ('40000000-0000-0000-0000-000000000004', '30000000-0000-0000-0000-000000000005', 'present');
+
+-- Reunião 5: 1 semana atrás — agendada sem relatório (prazo encerrado)
+INSERT INTO meetings (id, group_id, scheduled_at, status) VALUES
+  ('40000000-0000-0000-0000-000000000005',
+   '20000000-0000-0000-0000-000000000001',
+   now() - interval '7 days',
+   'scheduled');
