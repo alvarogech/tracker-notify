@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { LoginForm } from '@/components/auth/LoginForm'
 import { HuiosLogo } from '@/components/brand/HuiosLogo'
 
@@ -11,7 +12,9 @@ export default function LoginPage() {
         <HuiosLogo variant="light" size="lg" />
         <p className="text-huios-cream/50 text-sm tracking-wide">Pastoreio</p>
       </div>
-      <LoginForm />
+      <Suspense>
+        <LoginForm />
+      </Suspense>
     </div>
   )
 }
