@@ -12,25 +12,36 @@ interface Person {
 interface PersonCardProps {
   person: Person
   type: 'member' | 'visitor'
+  visitCount?: number
+  suggestConversion?: boolean
 }
 
-export function PersonCard({ person, type }: PersonCardProps) {
+export function PersonCard({ person, type, visitCount, suggestConversion }: PersonCardProps) {
   return (
     <Link
       href={`/pessoas/${person.id}`}
-      className="flex items-center justify-between rounded-xl border bg-card px-4 py-3 hover:bg-accent transition-colors"
+      className="flex items-center justify-between rounded-xl border bg-card px-4 py-3 transition-colors hover:bg-accent"
     >
-      <div className="flex flex-col gap-0.5 min-w-0">
-        <span className="font-medium text-sm truncate">{person.full_name}</span>
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <span className="truncate text-sm font-medium">{person.full_name}</span>
         {person.phone && (
-          <span className="text-xs text-muted-foreground flex items-center gap-1">
+          <span className="flex items-center gap-1 text-xs text-muted-foreground">
             <Phone size={11} />
             {person.phone}
           </span>
         )}
       </div>
       {type === 'visitor' && (
-        <Badge variant="secondary" className="ml-3 shrink-0 text-xs">Visitante</Badge>
+        <div className="ml-3 flex shrink-0 items-center gap-1.5">
+          {suggestConversion && (
+            <Badge variant="info" className="text-xs">
+              Sugerir vinculação
+            </Badge>
+          )}
+          <Badge variant="secondary" className="text-xs">
+            Visitante{typeof visitCount === 'number' ? ` · ${visitCount}` : ''}
+          </Badge>
+        </div>
       )}
     </Link>
   )

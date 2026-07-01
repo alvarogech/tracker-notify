@@ -86,6 +86,16 @@ Registro de decisões de arquitetura e produto. Atualizar sempre que uma decisã
 **Decisão:** Usar `next.config.mjs` (Next.js 14 não suporta `.ts`).
 **Motivo:** Next.js 14 só aceita `next.config.js` ou `next.config.mjs`.
 
+### DEC-017 — Tabela `visitor_visits` para contagem de visitas
+**Data:** 2026-07-01
+**Decisão:** Nova tabela `visitor_visits` (uma linha por visita, FK para `group_relationships`) em vez de reaproveitar `attendance_records` para visitantes.
+**Motivo:** `attendance_records` está acoplada a `meetings` e ao motor de ausências de membros; misturar visitantes ali violaria a regra de que visitante nunca entra no denominador de frequência nem gera ausência. Uma tabela dedicada mantém a contagem de visitas simples, auditável e desacoplada do fluxo de chamada obrigatória.
+
+### DEC-018 — Adiamento da sugestão de vinculação sem flag de banco
+**Data:** 2026-07-01
+**Decisão:** "Adiar" a sugestão de vinculação (3+ visitas) é tratado apenas como estado de UI (client-side), sem persistir flag no banco. A sugestão volta a aparecer normalmente na próxima renderização, conforme `docs/BUSINESS_RULES.md` (\"sugestão reaparece após próxima visita\").
+**Motivo:** Não há regra pastoral que exija suprimir a sugestão indefinidamente; adicionar um campo de \"dispensado\" seria estado extra sem valor operacional e contrariaria a proibição de inventar regras pastorais não descritas no documento mestre.
+
 ---
 
 ## Decisões Pendentes

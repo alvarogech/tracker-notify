@@ -111,18 +111,22 @@ Entregas:
 
 ---
 
-### Fase 4 — Visitantes e Conversão
+### Fase 4 — Visitantes e Conversão ✅
 
 **Objetivo:** Acompanhamento de visitantes e transição para participante.
 
 Entregas:
-- [ ] Contagem de visitas por relação ativa
-- [ ] Sugestão após 3 visitas (não automático)
-- [ ] Tela de confirmação, adiamento ou encerramento
-- [ ] Conversão atômica (visitante → participante)
-- [ ] Deduplicação por telefone
-- [ ] Alerta de nome semelhante
-- [ ] Testes unitários (10 cenários de visitantes)
+- [x] Migration: tabela `visitor_visits` (uma linha por visita, ligada a `group_relationships`)
+- [x] Contagem de visitas por relação ativa
+- [x] Sugestão após 3 visitas (não automático)
+- [x] Tela de confirmação, adiamento ou encerramento
+- [x] Conversão atômica (visitante → participante), histórico de visitas preservado
+- [x] Encerramento de relação de visitante preserva histórico
+- [x] Deduplicação por telefone
+- [x] Alerta de nome semelhante
+- [x] Testes unitários (10 cenários de visitantes)
+
+**Resultado:** Fase 4 concluída. Próximo: Fase 5 (Casos e Ações de Pastoreio).
 
 ---
 

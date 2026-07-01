@@ -6,10 +6,13 @@ import { createClient } from '@/lib/supabase/server'
 import { ArrowLeft, Phone, Mail, Calendar } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { formatDate } from '@/lib/utils'
+import { countVisits, shouldSuggestConversion } from '@/lib/business-rules/visitors'
+import { VisitorPanel } from '@/components/people/VisitorPanel'
 
 export const metadata: Metadata = { title: 'Perfil da pessoa' }
 
 interface RelRow {
+  id: string
   type: string
   status: string
   started_at: string
@@ -29,7 +32,9 @@ export default async function PersonPage({ params }: { params: { id: string } })
 
   const { data } = await supabase
     .from('group_relationships')
-    .select('type, status, started_at, person:people(id, full_name, phone, email, birthdate, archived_at)')
+    .select(
+      'id, type, status, started_at, person:people(id, full_name, phone, email, birthdate, archived_at)'
+    )
     .eq('person_id', params.id)
     .eq('status', 'active')
     .single()
@@ -39,22 +44,40 @@ export default async function PersonPage({ params }: { params: { id: string } })
 
   const person = rel.person
 
+  let visitCount = 0
+  if (rel.type === 'visitor') {
+    const { data: visits } = await supabase
+      .from('visitor_visits')
+      .select('visited_at')
+      .eq('group_relationship_id', rel.id)
+    visitCount = countVisits(
+      ((visits ?? []) as { visited_at: string }[]).map((v) => ({
+        visitedAt: new Date(v.visited_at),
+      }))
+    )
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <Link href="/pessoas" className="text-muted-foreground hover:text-foreground transition-colors">
+        <Link
+          href="/pessoas"
+          className="text-muted-foreground transition-colors hover:text-foreground"
+        >
           <ArrowLeft size={20} />
         </Link>
-        <h1 className="text-xl font-bold truncate">{person.full_name}</h1>
+        <h1 className="truncate text-xl font-bold">{person.full_name}</h1>
       </div>
 
-      <div className="rounded-xl border bg-card p-5 space-y-4">
+      <div className="space-y-4 rounded-xl border bg-card p-5">
         <div className="flex items-center gap-2">
           <Badge variant={rel.type === 'member' ? 'default' : 'secondary'}>
             {rel.type === 'member' ? 'Membro' : 'Visitante'}
           </Badge>
           {person.archived_at && (
-            <Badge variant="outline" className="text-muted-foreground">Arquivado</Badge>
+            <Badge variant="outline" className="text-muted-foreground">
+              Arquivado
+            </Badge>
           )}
         </div>
 
@@ -79,10 +102,18 @@ export default async function PersonPage({ params }: { params: { id: string } })
           )}
         </div>
 
-        <div className="text-xs text-muted-foreground/60 pt-1">
+        <div className="pt-1 text-xs text-muted-foreground/60">
           Vinculado em {formatDate(rel.started_at)}
         </div>
       </div>
+
+      {rel.type === 'visitor' && (
+        <VisitorPanel
+          relationshipId={rel.id}
+          visitCount={visitCount}
+          suggestConversion={shouldSuggestConversion(visitCount)}
+        />
+      )}
     </div>
   )
 }

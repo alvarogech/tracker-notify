@@ -187,3 +187,41 @@ INSERT INTO meetings (id, group_id, scheduled_at, status) VALUES
    '20000000-0000-0000-0000-000000000001',
    now() - interval '7 days',
    'scheduled');
+
+-- ============================================================
+-- Visitantes — GR Norte (Fase 4)
+-- Demonstra os três estados: poucas visitas, sugestão de vinculação e já convertido
+-- ============================================================
+
+-- Priscila Nunes (006) já cadastrada como visitante — 1 visita registrada
+INSERT INTO visitor_visits (group_relationship_id, visited_at)
+SELECT id, now() - interval '10 days'
+FROM group_relationships
+WHERE person_id = '30000000-0000-0000-0000-000000000006'
+  AND group_id = '20000000-0000-0000-0000-000000000001'
+  AND type = 'visitor';
+
+-- Yasmin Rocha — visitante com exatamente 3 visitas → dispara sugestão de vinculação
+INSERT INTO people (id, full_name, phone, birthdate) VALUES
+  ('30000000-0000-0000-0000-000000000031', 'Yasmin Rocha', '+5562991110031', '1998-03-02');
+
+INSERT INTO group_relationships (id, person_id, group_id, type, status) VALUES
+  ('50000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000031', '20000000-0000-0000-0000-000000000001', 'visitor', 'active');
+
+INSERT INTO visitor_visits (group_relationship_id, visited_at) VALUES
+  ('50000000-0000-0000-0000-000000000001', now() - interval '28 days'),
+  ('50000000-0000-0000-0000-000000000001', now() - interval '14 days'),
+  ('50000000-0000-0000-0000-000000000001', now() - interval '7 days');
+
+-- Otávio Farias — ex-visitante já convertido a membro, histórico de visitas preservado
+INSERT INTO people (id, full_name, phone, birthdate) VALUES
+  ('30000000-0000-0000-0000-000000000032', 'Otávio Farias', '+5562991110032', '1996-11-19');
+
+INSERT INTO group_relationships (id, person_id, group_id, type, status) VALUES
+  ('50000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000032', '20000000-0000-0000-0000-000000000001', 'member', 'active');
+
+INSERT INTO visitor_visits (group_relationship_id, visited_at) VALUES
+  ('50000000-0000-0000-0000-000000000002', now() - interval '90 days'),
+  ('50000000-0000-0000-0000-000000000002', now() - interval '75 days'),
+  ('50000000-0000-0000-0000-000000000002', now() - interval '60 days'),
+  ('50000000-0000-0000-0000-000000000002', now() - interval '45 days');
