@@ -28,7 +28,7 @@ O sistema registra fatos operacionais e apoia decisões humanas e pastorais. Nã
 - **Testes unitários/integração:** Vitest
 - **Testes E2E:** Playwright
 - **Gerenciador de pacotes:** pnpm
-- **Hospedagem:** Vercel (app) + Supabase (banco e auth)
+- **Hospedagem:** Netlify (app) + Supabase (banco e auth)
 - **Repositório:** GitHub
 
 ---
