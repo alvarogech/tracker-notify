@@ -42,3 +42,6 @@ supabase/.env
 
 # pnpm
 pnpm-debug.log
+
+# Claude Code
+.claude/
