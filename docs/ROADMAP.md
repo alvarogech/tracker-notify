@@ -130,20 +130,22 @@ Entregas:
 
 ---
 
-### Fase 5 — Casos e Ações de Pastoreio
+### Fase 5 — Casos e Ações de Pastoreio ✅
 
 **Objetivo:** Acompanhamento de ausências e resolução de situações.
 
 Entregas:
-- [ ] Migration: `pastoral_cases`, `pastoral_actions`
-- [ ] Criação automática após 2 ausências consecutivas (idempotente)
-- [ ] Escalonamento após 4 ausências (mesmo caso)
-- [ ] Criação manual pelo líder
-- [ ] Registro de ações de pastoreio
-- [ ] Linha do tempo de ações por caso
-- [ ] Resolução manual com resultado
+- [x] Migration: `pastoral_cases`, `pastoral_actions`
+- [x] Criação automática após 2 ausências consecutivas (idempotente)
+- [x] Escalonamento após 4 ausências (mesmo caso)
+- [x] Criação manual pelo líder
+- [x] Registro de ações de pastoreio
+- [x] Linha do tempo de ações por caso
+- [x] Resolução manual com resultado
 - [ ] Notificações internas básicas
-- [ ] Testes de idempotência
+- [x] Testes de idempotência
+
+**Resultado:** Fase 5 concluída, exceto notificações internas básicas (adiado — sem mecanismo de notificação in-app definido ainda; ver `docs/DECISIONS.md` DEC-021). Próximo: Fase 6 (Discipulado).
 
 ---
 

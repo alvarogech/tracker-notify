@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge'
 import { formatDate } from '@/lib/utils'
 import { countVisits, shouldSuggestConversion } from '@/lib/business-rules/visitors'
 import { VisitorPanel } from '@/components/people/VisitorPanel'
+import { CaseStatusBadge } from '@/components/pastoral-care/CaseStatusBadge'
+import { ManualCaseButton } from '@/components/pastoral-care/ManualCaseButton'
 
 export const metadata: Metadata = { title: 'Perfil da pessoa' }
 
@@ -26,8 +28,14 @@ interface RelRow {
   } | null
 }
 
+interface OpenCaseRow {
+  id: string
+  status: 'open' | 'resolved'
+  escalated_at: string | null
+}
+
 export default async function PersonPage({ params }: { params: { id: string } }) {
-  await requireRole(['leader', 'coordinator', 'admin'])
+  const profile = await requireRole(['leader', 'coordinator', 'admin'])
   const supabase = createClient()
 
   const { data } = await supabase
@@ -56,6 +64,15 @@ export default async function PersonPage({ params }: { params: { id: string } })
       }))
     )
   }
+
+  const { data: openCaseData } = await supabase
+    .from('pastoral_cases')
+    .select('id, status, escalated_at')
+    .eq('person_id', person.id)
+    .eq('status', 'open')
+    .maybeSingle()
+
+  const openCase = openCaseData as OpenCaseRow | null
 
   return (
     <div className="space-y-6">
@@ -113,6 +130,25 @@ export default async function PersonPage({ params }: { params: { id: string } })
           visitCount={visitCount}
           suggestConversion={shouldSuggestConversion(visitCount)}
         />
+      )}
+
+      {rel.type === 'member' && (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Pastoreio
+          </p>
+          {openCase ? (
+            <Link
+              href={`/casos/${openCase.id}`}
+              className="flex items-center justify-between gap-3 rounded-xl border bg-card p-4 transition-colors hover:bg-accent"
+            >
+              <span className="text-sm font-medium">Caso de pastoreio aberto</span>
+              <CaseStatusBadge status={openCase.status} escalated={!!openCase.escalated_at} />
+            </Link>
+          ) : (
+            profile.role === 'leader' && <ManualCaseButton personId={person.id} />
+          )}
+        </div>
       )}
     </div>
   )

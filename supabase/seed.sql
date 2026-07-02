@@ -225,3 +225,39 @@ INSERT INTO visitor_visits (group_relationship_id, visited_at) VALUES
   ('50000000-0000-0000-0000-000000000002', now() - interval '75 days'),
   ('50000000-0000-0000-0000-000000000002', now() - interval '60 days'),
   ('50000000-0000-0000-0000-000000000002', now() - interval '45 days');
+
+-- ============================================================
+-- Casos de pastoreio — GR Norte (Fase 5)
+-- Demonstra os dois estados relevantes: caso aberto sem ação
+-- (resolução bloqueada) e caso aberto com ação registrada (resolução liberada)
+-- ============================================================
+
+-- Fernanda Castro (004) atingiu streak 2 na Reunião 2 → caso automático aberto.
+-- A Reunião 4 elevou o streak real para 3 (reunião cancelada não conta), mas a
+-- regra de escalonamento é exata (streak === 4), então o caso permanece aberto
+-- sem escalonamento — nenhuma ação foi registrada ainda.
+INSERT INTO pastoral_cases (id, person_id, group_id, status, trigger_streak, created_by, created_at) VALUES
+  ('60000000-0000-0000-0000-000000000001',
+   '30000000-0000-0000-0000-000000000004',
+   '20000000-0000-0000-0000-000000000001',
+   'open',
+   2,
+   '00000000-0000-0000-0000-000000000003',
+   now() - interval '28 days');
+
+-- Diego Martins (005): caso aberto manualmente pelo líder (sem gatilho de
+-- ausência), já com 1 ação registrada → demonstra o estado de resolução liberada.
+INSERT INTO pastoral_cases (id, person_id, group_id, status, trigger_streak, created_by, created_at) VALUES
+  ('60000000-0000-0000-0000-000000000002',
+   '30000000-0000-0000-0000-000000000005',
+   '20000000-0000-0000-0000-000000000001',
+   'open',
+   NULL,
+   '00000000-0000-0000-0000-000000000003',
+   now() - interval '10 days');
+
+INSERT INTO pastoral_actions (case_id, description, created_by, created_at) VALUES
+  ('60000000-0000-0000-0000-000000000002',
+   'Ligação realizada — combinado retorno na próxima reunião',
+   '00000000-0000-0000-0000-000000000003',
+   now() - interval '9 days');

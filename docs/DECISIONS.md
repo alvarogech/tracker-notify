@@ -96,9 +96,24 @@ Registro de decisões de arquitetura e produto. Atualizar sempre que uma decisã
 **Decisão:** "Adiar" a sugestão de vinculação (3+ visitas) é tratado apenas como estado de UI (client-side), sem persistir flag no banco. A sugestão volta a aparecer normalmente na próxima renderização, conforme `docs/BUSINESS_RULES.md` (\"sugestão reaparece após próxima visita\").
 **Motivo:** Não há regra pastoral que exija suprimir a sugestão indefinidamente; adicionar um campo de \"dispensado\" seria estado extra sem valor operacional e contrariaria a proibição de inventar regras pastorais não descritas no documento mestre.
 
+### DEC-019 — Um caso de pastoreio aberto por pessoa
+**Data:** 2026-07-02
+**Decisão:** Índice único parcial `UNIQUE (person_id) WHERE status = 'open'` em `pastoral_cases`, garantido no banco (não apenas na aplicação).
+**Motivo:** A regra 5.7 proíbe casos duplicados para a mesma sequência de ausências. Como a sequência de faltas de uma pessoa corresponde a um único caso em andamento — que é escalado (não duplicado) ao chegar em 4 faltas —, no máximo um caso aberto por pessoa é a modelagem correta. A constraint no banco torna a idempotência estrutural, não apenas uma checagem de aplicação sujeita a condição de corrida.
+
+### DEC-020 — Escalonamento mantém acesso do líder
+**Data:** 2026-07-02
+**Decisão:** Ao escalar um caso à coordenação (streak = 4), as policies de RLS do líder sobre `pastoral_cases`/`pastoral_actions` continuam válidas — não há flag ou policy que revogue a visibilidade do líder. "Escalar" significa apenas que a coordenação também passa a enxergar e agir sobre o caso.
+**Motivo:** CLAUDE.md 5.1 descreve escalonamento como ampliação de alçada ("escala... à coordenação"), não como transferência de responsabilidade. O líder continua sendo quem acompanha a pessoa no dia a dia.
+
+### DEC-021 — Notificações internas adiadas
+**Data:** 2026-07-02
+**Decisão:** O item "Notificações internas básicas" do roadmap da Fase 5 não foi implementado nesta fase.
+**Motivo:** Não há mecanismo de notificação in-app definido no sistema (a infraestrutura de notificações existente, Fases A/B, é específica para lembretes de relatório via WhatsApp). Implementar um canal de notificação in-app genérico sem definição prévia de UX/produto violaria a proibição de inventar comportamento não descrito no documento mestre. Fica pendente de definição do responsável pelo produto.
+
 ---
 
 ## Decisões Pendentes
 
-Nenhuma pendência em aberto no momento.
+- Definir mecanismo de notificações internas para casos de pastoreio (criado, escalado) — ver DEC-021.
 

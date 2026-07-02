@@ -55,6 +55,12 @@ export default async function InicioPage() {
             >
               Pessoas
             </Link>
+            <Link
+              href="/casos"
+              className="flex-1 text-center text-sm font-medium border border-input rounded-lg py-2.5 hover:bg-accent transition-colors"
+            >
+              Casos
+            </Link>
           </div>
         </div>
       ) : (

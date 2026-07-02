@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireRole } from '@/lib/auth/server'
 import { isReportWithinDeadline } from '@/lib/business-rules/absences'
+import { syncPastoralCasesAfterReport } from '@/lib/pastoral-care/case-sync'
 
 type ActionResult = { error: string } | undefined
 
@@ -147,6 +148,14 @@ export async function submitReport(meetingId: string): Promise<ActionResult> {
     .eq('id', meetingId)
 
   if (error) return { error: 'Erro ao enviar relatório.' }
+
+  await syncPastoralCasesAfterReport(admin, {
+    meetingId,
+    groupId: meeting.groupId,
+    createdBy: profile.id,
+  })
+
   revalidatePath('/reunioes')
   revalidatePath(`/reunioes/${meetingId}`)
+  revalidatePath('/casos')
 }
