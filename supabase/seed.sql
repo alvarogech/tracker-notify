@@ -261,3 +261,37 @@ INSERT INTO pastoral_actions (case_id, description, created_by, created_at) VALU
    'Ligação realizada — combinado retorno na próxima reunião',
    '00000000-0000-0000-0000-000000000003',
    now() - interval '9 days');
+
+-- ============================================================
+-- Discipulado — GR Norte (Fase 6)
+-- Demonstra uma atribuição ativa e uma substituição, preservando histórico
+-- ============================================================
+
+-- Marcos Alves (001): discipulado ativo pelo próprio líder do GR Norte
+INSERT INTO discipleship_assignments (person_id, discipler_id, group_id, started_at, created_by, created_at) VALUES
+  ('30000000-0000-0000-0000-000000000001',
+   '00000000-0000-0000-0000-000000000003',
+   '20000000-0000-0000-0000-000000000001',
+   now() - interval '60 days',
+   '00000000-0000-0000-0000-000000000003',
+   now() - interval '60 days');
+
+-- Tatiane Rocha (002): discipulado inicial pelo líder do GR, encerrado e
+-- substituído pela coordenação — demonstra que a substituição encerra o
+-- vínculo anterior preservando o histórico (5.3)
+INSERT INTO discipleship_assignments (person_id, discipler_id, group_id, started_at, ended_at, created_by, created_at) VALUES
+  ('30000000-0000-0000-0000-000000000002',
+   '00000000-0000-0000-0000-000000000003',
+   '20000000-0000-0000-0000-000000000001',
+   now() - interval '90 days',
+   now() - interval '30 days',
+   '00000000-0000-0000-0000-000000000003',
+   now() - interval '90 days');
+
+INSERT INTO discipleship_assignments (person_id, discipler_id, group_id, started_at, created_by, created_at) VALUES
+  ('30000000-0000-0000-0000-000000000002',
+   '00000000-0000-0000-0000-000000000002',
+   '20000000-0000-0000-0000-000000000001',
+   now() - interval '30 days',
+   '00000000-0000-0000-0000-000000000002',
+   now() - interval '30 days');

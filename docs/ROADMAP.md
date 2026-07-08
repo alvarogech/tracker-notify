@@ -149,17 +149,19 @@ Entregas:
 
 ---
 
-### Fase 6 — Discipulado
+### Fase 6 — Discipulado ✅
 
 **Objetivo:** Registro de quem tem discipulador responsável.
 
 Entregas:
-- [ ] Migration: `discipleship_assignments`
-- [ ] Definição e substituição de discipulador
-- [ ] Encerramento de vínculo
-- [ ] Histórico de discipuladores
-- [ ] Indicador de cobertura de discipulado
-- [ ] Testes unitários (5 cenários)
+- [x] Migration: `discipleship_assignments`
+- [x] Definição e substituição de discipulador
+- [x] Encerramento de vínculo
+- [x] Histórico de discipuladores
+- [x] Indicador de cobertura de discipulado
+- [x] Testes unitários (5 cenários)
+
+**Resultado:** Fase 6 concluída. Próximo: Fase 7 (Formação e Serviço).
 
 ---
 

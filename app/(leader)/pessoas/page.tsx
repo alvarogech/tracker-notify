@@ -60,6 +60,17 @@ export default async function PessoasPage({ searchParams }: { searchParams: { q?
   const members = people.filter((r) => r.type === 'member')
   const visitors = people.filter((r) => r.type === 'visitor')
 
+  let membersWithDiscipler = 0
+  if (members.length > 0) {
+    const memberPersonIds = members.map((r) => r.person!.id)
+    const { count } = await supabase
+      .from('discipleship_assignments')
+      .select('person_id', { count: 'exact', head: true })
+      .in('person_id', memberPersonIds)
+      .is('ended_at', null)
+    membersWithDiscipler = count ?? 0
+  }
+
   const visitorIds = visitors.map((r) => r.id)
   const visitCounts = new Map<string, number>()
   if (visitorIds.length > 0) {
@@ -108,9 +119,14 @@ export default async function PessoasPage({ searchParams }: { searchParams: { q?
 
       {members.length > 0 && (
         <section className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Membros · {members.length}
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Membros · {members.length}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {membersWithDiscipler} de {members.length} com discipulador atribuído
+            </p>
+          </div>
           {members.map((r) => (
             <PersonCard key={r.id} person={r.person!} type="member" />
           ))}

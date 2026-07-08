@@ -111,6 +111,18 @@ Registro de decisões de arquitetura e produto. Atualizar sempre que uma decisã
 **Decisão:** O item "Notificações internas básicas" do roadmap da Fase 5 não foi implementado nesta fase.
 **Motivo:** Não há mecanismo de notificação in-app definido no sistema (a infraestrutura de notificações existente, Fases A/B, é específica para lembretes de relatório via WhatsApp). Implementar um canal de notificação in-app genérico sem definição prévia de UX/produto violaria a proibição de inventar comportamento não descrito no documento mestre. Fica pendente de definição do responsável pelo produto.
 
+### DEC-022 — Discipulador é um `profiles`, não um `people`
+
+**Data:** 2026-07-03
+**Decisão:** `discipleship_assignments.discipler_id` referencia `profiles(id)` (usuários autenticados: líder, coordenação ou admin), não `people(id)`.
+**Motivo:** O documento mestre descreve discipulado como algo conduzido por quem exerce liderança/pastoreio no sistema — não há modelagem de "quem pode discipular" fora dos papéis autenticados existentes. Referenciar `people` exigiria inventar um novo conceito (pessoa comum como discipuladora) sem base no documento mestre. `profiles` já representa exatamente o conjunto de pessoas com responsabilidade pastoral reconhecida pelo sistema.
+
+### DEC-023 — Opções de discipulador seguem o RLS existente de `profiles`
+
+**Data:** 2026-07-03
+**Decisão:** A lista de discipuladores disponíveis para atribuição no perfil da pessoa é obtida com o cliente anônimo (RLS), sem relaxar as policies de `profiles`. Como `profiles_self_read` só permite ao líder ler o próprio registro, na prática um líder só enxerga a si mesmo como opção (e portanto só pode se atribuir como discipulador do seu GR). Coordenação e admin, cobertos por `profiles_coordinator_read`, enxergam todos os perfis ativos com papel `leader`, `coordinator` ou `admin` e podem atribuir qualquer um deles. O Server Action `assignDiscipler` reforça a mesma regra no servidor (líder só pode indicar a si mesmo), não confiando apenas na lista exibida na UI.
+**Motivo:** Evita duplicar ou relaxar RLS de `profiles` só para popular um seletor — o comportamento de acesso já existente é exatamente o que faz sentido aqui: um líder de GR normalmente é quem disciplina as pessoas do próprio grupo; substituições que envolvem outro discipulador são decisão da coordenação.
+
 ---
 
 ## Decisões Pendentes

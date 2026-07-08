@@ -10,6 +10,7 @@ import { countVisits, shouldSuggestConversion } from '@/lib/business-rules/visit
 import { VisitorPanel } from '@/components/people/VisitorPanel'
 import { CaseStatusBadge } from '@/components/pastoral-care/CaseStatusBadge'
 import { ManualCaseButton } from '@/components/pastoral-care/ManualCaseButton'
+import { DisciplershipPanel } from '@/components/discipleship/DisciplershipPanel'
 
 export const metadata: Metadata = { title: 'Perfil da pessoa' }
 
@@ -32,6 +33,13 @@ interface OpenCaseRow {
   id: string
   status: 'open' | 'resolved'
   escalated_at: string | null
+}
+
+interface AssignmentRow {
+  id: string
+  started_at: string
+  ended_at: string | null
+  discipler: { id: string; full_name: string } | null
 }
 
 export default async function PersonPage({ params }: { params: { id: string } }) {
@@ -73,6 +81,34 @@ export default async function PersonPage({ params }: { params: { id: string } })
     .maybeSingle()
 
   const openCase = openCaseData as OpenCaseRow | null
+
+  const { data: assignmentData } = await supabase
+    .from('discipleship_assignments')
+    .select('id, started_at, ended_at, discipler:profiles(id, full_name)')
+    .eq('person_id', person.id)
+    .order('started_at', { ascending: false })
+
+  const rawAssignments = (assignmentData ?? []) as unknown as AssignmentRow[]
+  const assignments = rawAssignments.map((a) => ({
+    id: a.id,
+    disciplerId: a.discipler?.id ?? null,
+    disciplerName: a.discipler?.full_name ?? 'Discipulador removido',
+    startedAt: a.started_at,
+    endedAt: a.ended_at,
+  }))
+  const activeAssignment = assignments.find((a) => a.endedAt === null) ?? null
+  const history = assignments.filter((a) => a.endedAt !== null)
+
+  const { data: disciplerData } = await supabase
+    .from('profiles')
+    .select('id, full_name')
+    .eq('active', true)
+    .in('role', ['leader', 'coordinator', 'admin'])
+    .order('full_name')
+
+  const disciplerOptions = ((disciplerData ?? []) as { id: string; full_name: string }[])
+    .filter((d) => d.id !== activeAssignment?.disciplerId)
+    .map((d) => ({ id: d.id, fullName: d.full_name }))
 
   return (
     <div className="space-y-6">
@@ -149,6 +185,15 @@ export default async function PersonPage({ params }: { params: { id: string } })
             profile.role === 'leader' && <ManualCaseButton personId={person.id} />
           )}
         </div>
+      )}
+
+      {rel.type === 'member' && (
+        <DisciplershipPanel
+          personId={person.id}
+          activeAssignment={activeAssignment}
+          history={history}
+          disciplerOptions={disciplerOptions}
+        />
       )}
     </div>
   )
