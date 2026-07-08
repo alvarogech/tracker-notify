@@ -147,6 +147,24 @@ Registro de decisões de arquitetura e produto. Atualizar sempre que uma decisã
 **Decisão:** Rota `GET /api/admin/export/grs`, restrita a `role = 'admin'` (checagem manual via `getCurrentProfile()`, já que `redirect()` de `next/navigation` não é apropriado dentro de um Route Handler), gera um CSV (sem dependência externa) com os GRs onde `signup_source = 'self'`: nome, líder, e-mail, dia/horário, local, status, data de cadastro e contagem de membros/visitantes ativos.
 **Motivo:** Pedido explícito do responsável pelo produto para poder analisar em planilha os dados que os próprios líderes cadastraram. CSV evita adicionar uma biblioteca de planilhas (xlsx/exceljs) para uma necessidade que um texto delimitado por vírgulas já resolve — abre nativamente no Excel e no Google Sheets.
 
+### DEC-028 — Atomicidade da transferência por chamadas sequenciais, sem função Postgres dedicada
+
+**Data:** 2026-07-08
+**Decisão:** `transferPerson` (`app/(leader)/pessoas/[id]/transferencia-actions.ts`) executa a transferência como uma sequência de chamadas `createAdminClient()` (encerrar vínculo atual → criar vínculo no novo GR → encerrar/criar vínculo de discipulado quando aplicável → registrar `group_transfers` → registrar `audit_logs`), sem uma função `LANGUAGE plpgsql` chamada via `.rpc()` para transação real no banco.
+**Motivo:** Nenhuma fase anterior introduziu esse mecanismo — `confirmConversion` (Fase 4) e `assignDiscipler` (Fase 6) já resolvem substituições multi-passo com chamadas sequenciais, aceitando atomicidade best-effort como convenção estabelecida. O risco específico da transferência (linha de `group_relationships` encerrada sem a nova ser criada) é o mesmo risco já aceito em `assignDiscipler`, que encerra o vínculo de discipulado antes de inserir o novo. Introduzir uma função de banco só para este fluxo criaria uma segunda convenção de atomicidade coexistindo com a primeira, aumentando a superfície sem eliminar o risco (o registro de `group_transfers`/`audit_logs` continuaria sendo uma chamada separada de qualquer forma). Caso o produto exija atomicidade transacional real no futuro, o padrão deve ser adotado de uma vez para todos os fluxos multi-passo, não apenas para transferências.
+
+### DEC-029 — Sequência de faltas já começa do zero no novo GR, sem alteração de código
+
+**Data:** 2026-07-08
+**Decisão:** Confirmado, por leitura de `lib/pastoral-care/case-sync.ts`, que nenhuma mudança de código é necessária para a regra 5.5 ("a sequência operacional de faltas começa no novo GR após a transferência"). `syncPastoralCasesAfterReport` busca o histórico de reuniões filtrando `.eq('group_id', groupId)` (o GR cujo relatório acabou de ser enviado) e computa `computeAbsenceStreak` apenas sobre esse histórico. Como a pessoa transferida não tem `attendance_records` em reuniões do novo GR anteriores à transferência (reuniões são específicas de cada GR), a sequência começa naturalmente do zero na primeira reunião do novo GR após a mudança. Não há nenhum ponto do código que consulte sequência ou histórico de ausências apenas por `person_id` sem escopo de `group_id`.
+**Motivo:** Evita alteração desnecessária em código já correto; documenta a verificação exigida pela Fase 8 em vez de introduzir lógica redundante.
+
+### DEC-030 — Sem módulo de regra pura dedicado a transferências
+
+**Data:** 2026-07-08
+**Decisão:** Não foi criado `lib/business-rules/transfers.ts`. As únicas decisões da transferência além da orquestração de banco são checagens triviais de existência/igualdade (GR de destino diferente do atual; pessoa é membro ativo; há atribuição de discipulado ativa) já expressas como guards simples no Server Action, e a decisão "oferecer manter/encerrar discipulador" na UI reaproveita o mesmo `activeAssignment` que a página da pessoa já calcula (mesmo padrão `.find(a => a.endedAt === null)` consagrado por `resolveActiveAssignment`, `lib/business-rules/discipleship.ts`, Fase 6) — sem reintroduzir a checagem.
+**Motivo:** Mesmo julgamento da DEC-025: criar um módulo de regra pura só para encapsular comparações triviais (`===`) seria forçar uma abstração sem lógica de negócio genuína por trás, e duplicaria uma checagem de discipulador ativo que já existe e já é testada desde a Fase 6.
+
 ---
 
 ## Decisões Pendentes
@@ -154,4 +172,5 @@ Registro de decisões de arquitetura e produto. Atualizar sempre que uma decisã
 - Definir mecanismo de notificações internas para casos de pastoreio (criado, escalado) — ver DEC-021.
 - Definir onde/como o sistema deve expor um fluxo de atribuição de "função de liderança" que consulte `isEligibleToLeadFormatively` — ver DEC-025.
 - Considerar um mecanismo de limitação de tentativas (rate limiting) em `/cadastro-lider` caso o código de convite vaze — hoje a única barreira além do código é a aprovação manual.
+- Criar infraestrutura de testes de RLS via SQL (`supabase/tests/`) — nenhuma fase até a 8 criou esse mecanismo; testes de acesso hoje dependem apenas da leitura manual das policies.
 

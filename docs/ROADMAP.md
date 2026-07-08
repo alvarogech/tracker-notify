@@ -186,17 +186,19 @@ Entregas:
 
 ---
 
-### Fase 8 — Transferências
+### Fase 8 — Transferências ✅
 
 **Objetivo:** Movimentação segura de pessoas entre GRs.
 
 Entregas:
-- [ ] Migration: `group_transfers`
-- [ ] Fluxo exclusivo da coordenação
-- [ ] Encerramento do vínculo anterior + criação do novo (atômico)
-- [ ] Revisão do discipulador no fluxo
-- [ ] Registro em `audit_logs`
+- [x] Migration: `group_transfers`
+- [x] Fluxo exclusivo da coordenação
+- [x] Encerramento do vínculo anterior + criação do novo (atômico)
+- [x] Revisão do discipulador no fluxo
+- [x] Registro em `audit_logs`
 - [ ] Testes de atomicidade e auditoria
+
+**Resultado:** Fase 8 concluída, exceto testes automatizados de atomicidade/auditoria (adiado — não há infraestrutura de testes de RLS via SQL neste repositório em nenhuma fase anterior, e a lógica de transferência é orquestração sequencial de chamadas ao Supabase sem regra pura nova a testar; ver `docs/DECISIONS.md` DEC-028, DEC-029 e DEC-030). Próximo: Fase 9 (Painéis).
 
 ---
 

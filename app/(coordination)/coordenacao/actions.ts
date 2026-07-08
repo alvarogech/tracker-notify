@@ -9,7 +9,7 @@ import { updateGroupSchema } from '@/lib/validations/groups'
 type ActionResult = { error: string } | undefined
 
 export async function updateGroup(groupId: string, _: unknown, formData: FormData): Promise<ActionResult> {
-  await requireRole(['admin'])
+  const profile = await requireRole(['admin'])
 
   const raw = {
     name: formData.get('name'),
@@ -38,13 +38,20 @@ export async function updateGroup(groupId: string, _: unknown, formData: FormDat
 
   if (error) return { error: 'Erro ao atualizar GR.' }
 
+  await admin.from('audit_logs').insert({
+    actor_id: profile.id,
+    action: 'group_update',
+    entity_type: 'group',
+    entity_id: groupId,
+  } as never)
+
   revalidatePath('/coordenacao')
   revalidatePath('/admin')
   redirect('/coordenacao')
 }
 
 export async function deleteGroup(groupId: string): Promise<ActionResult> {
-  await requireRole(['admin'])
+  const profile = await requireRole(['admin'])
   const admin = createAdminClient()
 
   const { error } = await admin.from('groups').delete().eq('id', groupId)
@@ -58,6 +65,13 @@ export async function deleteGroup(groupId: string): Promise<ActionResult> {
     }
     return { error: 'Erro ao excluir GR.' }
   }
+
+  await admin.from('audit_logs').insert({
+    actor_id: profile.id,
+    action: 'group_delete',
+    entity_type: 'group',
+    entity_id: groupId,
+  } as never)
 
   revalidatePath('/coordenacao')
   revalidatePath('/admin')

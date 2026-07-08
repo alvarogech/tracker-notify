@@ -14,6 +14,7 @@ import { ManualCaseButton } from '@/components/pastoral-care/ManualCaseButton'
 import { DisciplershipPanel } from '@/components/discipleship/DisciplershipPanel'
 import { TrainingPanel } from '@/components/training/TrainingPanel'
 import { ServiceAssignmentsPanel } from '@/components/service/ServiceAssignmentsPanel'
+import { TransferPersonPanel } from '@/components/groups/TransferPersonPanel'
 
 export const metadata: Metadata = { title: 'Perfil da pessoa' }
 
@@ -22,6 +23,7 @@ interface RelRow {
   type: string
   status: string
   started_at: string
+  group: { id: string; name: string } | null
   person: {
     id: string
     full_name: string
@@ -30,6 +32,11 @@ interface RelRow {
     birthdate?: string | null
     archived_at?: string | null
   } | null
+}
+
+interface GroupOptionRow {
+  id: string
+  name: string
 }
 
 interface OpenCaseRow {
@@ -76,7 +83,7 @@ export default async function PersonPage({ params }: { params: { id: string } })
   const { data } = await supabase
     .from('group_relationships')
     .select(
-      'id, type, status, started_at, person:people(id, full_name, phone, email, birthdate, archived_at)'
+      'id, type, status, started_at, group:groups(id, name), person:people(id, full_name, phone, email, birthdate, archived_at)'
     )
     .eq('person_id', params.id)
     .eq('status', 'active')
@@ -190,6 +197,19 @@ export default async function PersonPage({ params }: { params: { id: string } })
     .filter((area) => !activeServiceAreaIds.has(area.id))
     .map((area) => ({ id: area.id, name: area.name }))
 
+  const canTransfer = profile.role === 'coordinator' || profile.role === 'admin'
+  let transferGroupOptions: { id: string; name: string }[] = []
+  if (canTransfer && rel.type === 'member') {
+    const { data: groupsData } = await supabase
+      .from('groups')
+      .select('id, name')
+      .eq('active', true)
+      .order('name')
+    transferGroupOptions = ((groupsData ?? []) as unknown as GroupOptionRow[]).filter(
+      (g) => g.id !== rel.group?.id
+    )
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -273,6 +293,15 @@ export default async function PersonPage({ params }: { params: { id: string } })
           activeAssignment={activeAssignment}
           history={history}
           disciplerOptions={disciplerOptions}
+        />
+      )}
+
+      {rel.type === 'member' && canTransfer && rel.group && (
+        <TransferPersonPanel
+          personId={person.id}
+          currentGroupName={rel.group.name}
+          groupOptions={transferGroupOptions}
+          activeDisciplerName={activeAssignment?.disciplerName ?? null}
         />
       )}
 
