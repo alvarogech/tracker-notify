@@ -1,6 +1,8 @@
+import Link from 'next/link'
 import { HuiosLogo } from '@/components/brand/HuiosLogo'
 import { EmausLogo } from '@/components/brand/EmausLogo'
 import { InstitutionalFooter } from '@/components/brand/InstitutionalFooter'
+import { Button } from '@/components/ui/button'
 
 export default function HomePage() {
   return (
@@ -22,14 +24,17 @@ export default function HomePage() {
           <EmausLogo variant="light" size="sm" />
         </div>
 
-        {/* Status de desenvolvimento */}
-        <div className="mt-8 rounded-lg border border-huios-cream/10 bg-huios-cream/5 px-6 py-4 text-center max-w-sm">
-          <p className="text-huios-cream/70 text-sm">
-            Sistema em desenvolvimento.
-          </p>
-          <p className="text-huios-cream/40 text-xs mt-1">
-            Fase 0 — Fundação concluída
-          </p>
+        <div className="mt-8 flex w-full max-w-xs flex-col gap-3">
+          <Button asChild className="w-full">
+            <Link href="/login">Entrar</Link>
+          </Button>
+          <Button
+            asChild
+            variant="outline"
+            className="w-full border-huios-cream/20 text-huios-cream/70 hover:bg-huios-cream/10 hover:text-huios-cream"
+          >
+            <Link href="/cadastro-lider">Sou líder de GR e quero me cadastrar</Link>
+          </Button>
         </div>
       </main>
 
