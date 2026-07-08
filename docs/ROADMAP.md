@@ -165,22 +165,24 @@ Entregas:
 
 ---
 
-### Fase 7 — Formação e Serviço
+### Fase 7 — Formação e Serviço ✅
 
 **Objetivo:** Rastreamento declarativo de formação e elegibilidade para servir.
 
 Entregas:
-- [ ] Migrations: `training_programs`, `training_records`, `ministry_areas`, `service_assignments`
-- [ ] Seed de áreas de serviço (8 áreas iniciais)
-- [ ] Seed de programas formativos (Cultura + Makarios 1/2/3)
-- [ ] Atualização declarativa de Cultura Emaús
-- [ ] Atualização declarativa de Makarios por volume
-- [ ] Cálculo de aptidão para servir
-- [ ] Cálculo de aptidão formativa para liderar
-- [ ] Bloqueio de serviço sem Cultura concluído
+- [x] Migrations: `training_programs`, `training_records`, `ministry_areas`, `service_assignments`
+- [x] Seed de áreas de serviço (8 áreas iniciais)
+- [x] Seed de programas formativos (Cultura + Makarios 1/2/3)
+- [x] Atualização declarativa de Cultura Emaús
+- [x] Atualização declarativa de Makarios por volume
+- [x] Cálculo de aptidão para servir
+- [x] Cálculo de aptidão formativa para liderar
+- [x] Bloqueio de serviço sem Cultura concluído
 - [ ] Bloqueio de função de liderança sem formação completa
-- [ ] Testes unitários de elegibilidade (7 cenários)
+- [x] Testes unitários de elegibilidade (7 cenários)
 - [ ] Testes de serviço (6 cenários)
+
+**Resultado:** Fase 7 concluída, exceto os dois itens acima (adiados — ver `docs/DECISIONS.md` DEC-024 e DEC-025). Próximo: Fase 8 (Transferências).
 
 ---
 

@@ -7,10 +7,13 @@ import { ArrowLeft, Phone, Mail, Calendar } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { formatDate } from '@/lib/utils'
 import { countVisits, shouldSuggestConversion } from '@/lib/business-rules/visitors'
+import { isEligibleToServe, isEligibleToLeadFormatively } from '@/lib/business-rules/eligibility'
 import { VisitorPanel } from '@/components/people/VisitorPanel'
 import { CaseStatusBadge } from '@/components/pastoral-care/CaseStatusBadge'
 import { ManualCaseButton } from '@/components/pastoral-care/ManualCaseButton'
 import { DisciplershipPanel } from '@/components/discipleship/DisciplershipPanel'
+import { TrainingPanel } from '@/components/training/TrainingPanel'
+import { ServiceAssignmentsPanel } from '@/components/service/ServiceAssignmentsPanel'
 
 export const metadata: Metadata = { title: 'Perfil da pessoa' }
 
@@ -40,6 +43,30 @@ interface AssignmentRow {
   started_at: string
   ended_at: string | null
   discipler: { id: string; full_name: string } | null
+}
+
+interface TrainingProgramRow {
+  id: string
+  code: string
+  name: string
+  display_order: number
+}
+
+interface TrainingRecordRow {
+  program_id: string
+  completed_at: string
+}
+
+interface MinistryAreaRow {
+  id: string
+  name: string
+}
+
+interface ServiceAssignmentRow {
+  id: string
+  started_at: string
+  ended_at: string | null
+  ministry_area: { id: string; name: string } | null
 }
 
 export default async function PersonPage({ params }: { params: { id: string } }) {
@@ -109,6 +136,59 @@ export default async function PersonPage({ params }: { params: { id: string } })
   const disciplerOptions = ((disciplerData ?? []) as { id: string; full_name: string }[])
     .filter((d) => d.id !== activeAssignment?.disciplerId)
     .map((d) => ({ id: d.id, fullName: d.full_name }))
+
+  const { data: programsData } = await supabase
+    .from('training_programs')
+    .select('id, code, name, display_order')
+    .order('display_order')
+
+  const { data: recordsData } = await supabase
+    .from('training_records')
+    .select('program_id, completed_at')
+    .eq('person_id', person.id)
+
+  const trainingPrograms = (programsData ?? []) as unknown as TrainingProgramRow[]
+  const trainingRecords = (recordsData ?? []) as unknown as TrainingRecordRow[]
+  const completedAtByProgramId = new Map(trainingRecords.map((r) => [r.program_id, r.completed_at]))
+
+  const programStatuses = trainingPrograms.map((program) => ({
+    code: program.code,
+    name: program.name,
+    completedAt: completedAtByProgramId.get(program.id) ?? null,
+  }))
+  const completedProgramCodes = programStatuses
+    .filter((p) => p.completedAt !== null)
+    .map((p) => p.code)
+
+  const eligibleToServe = isEligibleToServe(completedProgramCodes)
+  const eligibleToLeadFormatively = isEligibleToLeadFormatively(completedProgramCodes)
+
+  const { data: areasData } = await supabase
+    .from('ministry_areas')
+    .select('id, name')
+    .order('name')
+
+  const { data: serviceData } = await supabase
+    .from('service_assignments')
+    .select('id, started_at, ended_at, ministry_area:ministry_areas(id, name)')
+    .eq('person_id', person.id)
+    .order('started_at', { ascending: false })
+
+  const ministryAreas = (areasData ?? []) as unknown as MinistryAreaRow[]
+  const rawServiceAssignments = (serviceData ?? []) as unknown as ServiceAssignmentRow[]
+  const serviceAssignments = rawServiceAssignments.map((a) => ({
+    id: a.id,
+    areaId: a.ministry_area?.id ?? null,
+    areaName: a.ministry_area?.name ?? 'Área removida',
+    startedAt: a.started_at,
+    endedAt: a.ended_at,
+  }))
+  const activeServiceAssignments = serviceAssignments.filter((a) => a.endedAt === null)
+  const serviceHistory = serviceAssignments.filter((a) => a.endedAt !== null)
+  const activeServiceAreaIds = new Set(activeServiceAssignments.map((a) => a.areaId))
+  const serviceAreaOptions = ministryAreas
+    .filter((area) => !activeServiceAreaIds.has(area.id))
+    .map((area) => ({ id: area.id, name: area.name }))
 
   return (
     <div className="space-y-6">
@@ -193,6 +273,25 @@ export default async function PersonPage({ params }: { params: { id: string } })
           activeAssignment={activeAssignment}
           history={history}
           disciplerOptions={disciplerOptions}
+        />
+      )}
+
+      {rel.type === 'member' && (
+        <TrainingPanel
+          personId={person.id}
+          programs={programStatuses}
+          eligibleToServe={eligibleToServe}
+          eligibleToLeadFormatively={eligibleToLeadFormatively}
+        />
+      )}
+
+      {rel.type === 'member' && (
+        <ServiceAssignmentsPanel
+          personId={person.id}
+          eligibleToServe={eligibleToServe}
+          activeAssignments={activeServiceAssignments}
+          history={serviceHistory}
+          areaOptions={serviceAreaOptions}
         />
       )}
     </div>

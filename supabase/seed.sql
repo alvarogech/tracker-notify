@@ -295,3 +295,55 @@ INSERT INTO discipleship_assignments (person_id, discipler_id, group_id, started
    now() - interval '30 days',
    '00000000-0000-0000-0000-000000000002',
    now() - interval '30 days');
+
+-- ============================================================
+-- Formação — GR Norte (Fase 7)
+-- Demonstra os três estados relevantes: todos os 4 programas concluídos,
+-- apenas Cultura Emaús concluído, e nenhum programa registrado
+-- ============================================================
+
+-- Bruno Lima (003): os 4 programas concluídos → atende aos requisitos
+-- formativos cadastrados para liderança
+INSERT INTO training_records (person_id, program_id, completed_at, recorded_by)
+SELECT '30000000-0000-0000-0000-000000000003', tp.id, now() - interval '120 days',
+       '00000000-0000-0000-0000-000000000003'
+FROM training_programs tp WHERE tp.code = 'cultura_emaus';
+
+INSERT INTO training_records (person_id, program_id, completed_at, recorded_by)
+SELECT '30000000-0000-0000-0000-000000000003', tp.id, now() - interval '90 days',
+       '00000000-0000-0000-0000-000000000003'
+FROM training_programs tp WHERE tp.code = 'makarios_1';
+
+INSERT INTO training_records (person_id, program_id, completed_at, recorded_by)
+SELECT '30000000-0000-0000-0000-000000000003', tp.id, now() - interval '60 days',
+       '00000000-0000-0000-0000-000000000003'
+FROM training_programs tp WHERE tp.code = 'makarios_2';
+
+INSERT INTO training_records (person_id, program_id, completed_at, recorded_by)
+SELECT '30000000-0000-0000-0000-000000000003', tp.id, now() - interval '30 days',
+       '00000000-0000-0000-0000-000000000003'
+FROM training_programs tp WHERE tp.code = 'makarios_3';
+
+-- Marcos Alves (001): apenas Cultura Emaús concluído → apto a servir, não apto a liderar
+INSERT INTO training_records (person_id, program_id, completed_at, recorded_by)
+SELECT '30000000-0000-0000-0000-000000000001', tp.id, now() - interval '45 days',
+       '00000000-0000-0000-0000-000000000003'
+FROM training_programs tp WHERE tp.code = 'cultura_emaus';
+
+-- Fernanda Castro (004): nenhum programa registrado (ausência de linhas =
+-- nenhum programa concluído) → não apta a servir nem a liderar
+
+-- ============================================================
+-- Serviço — GR Norte (Fase 7)
+-- Bruno Lima e Marcos Alves já concluíram Cultura Emaús → podem iniciar
+-- vínculo de serviço ativo
+-- ============================================================
+INSERT INTO service_assignments (person_id, ministry_area_id, group_id, started_at, created_by)
+SELECT '30000000-0000-0000-0000-000000000003', ma.id, '20000000-0000-0000-0000-000000000001',
+       now() - interval '20 days', '00000000-0000-0000-0000-000000000003'
+FROM ministry_areas ma WHERE ma.name = 'Acolhimento';
+
+INSERT INTO service_assignments (person_id, ministry_area_id, group_id, started_at, created_by)
+SELECT '30000000-0000-0000-0000-000000000001', ma.id, '20000000-0000-0000-0000-000000000001',
+       now() - interval '15 days', '00000000-0000-0000-0000-000000000003'
+FROM ministry_areas ma WHERE ma.name = 'Mídia e Som';

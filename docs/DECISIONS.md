@@ -123,9 +123,22 @@ Registro de decisões de arquitetura e produto. Atualizar sempre que uma decisã
 **Decisão:** A lista de discipuladores disponíveis para atribuição no perfil da pessoa é obtida com o cliente anônimo (RLS), sem relaxar as policies de `profiles`. Como `profiles_self_read` só permite ao líder ler o próprio registro, na prática um líder só enxerga a si mesmo como opção (e portanto só pode se atribuir como discipulador do seu GR). Coordenação e admin, cobertos por `profiles_coordinator_read`, enxergam todos os perfis ativos com papel `leader`, `coordinator` ou `admin` e podem atribuir qualquer um deles. O Server Action `assignDiscipler` reforça a mesma regra no servidor (líder só pode indicar a si mesmo), não confiando apenas na lista exibida na UI.
 **Motivo:** Evita duplicar ou relaxar RLS de `profiles` só para popular um seletor — o comportamento de acesso já existente é exatamente o que faz sentido aqui: um líder de GR normalmente é quem disciplina as pessoas do próprio grupo; substituições que envolvem outro discipulador são decisão da coordenação.
 
+### DEC-024 — RLS de `training_records` escopada por join, sem `group_id` direto
+
+**Data:** 2026-07-04
+**Decisão:** `training_records` não tem coluna `group_id`. O escopo de leitura/inserção do líder é feito via `EXISTS` unindo `group_relationships` → `groups` por `person_id`, no mesmo padrão de `visitor_visits` (`20260701000001_visitors.sql`). Não há policy de UPDATE/DELETE para o líder — o registro é declarativo e apenas de inserção; correção de lançamento indevido é tarefa da coordenação (coberta pela policy `training_records_coordinator_write`).
+**Motivo:** Adicionar `group_id` a `training_records` duplicaria uma informação já derivável de `people` → `group_relationships`, e a formação de uma pessoa não muda de GR quando ela é transferida (é uma característica da pessoa, não do vínculo atual). O join por `person_id` mantém a tabela simples e evita um campo redundante que poderia divergir após uma transferência futura (Fase 8).
+
+### DEC-025 — "Bloqueio de função de liderança sem formação completa" não implementado nesta fase
+
+**Data:** 2026-07-04
+**Decisão:** A Fase 7 implementa o cálculo de aptidão formativa para liderar (`isEligibleToLeadFormatively`) e a exibição da frase mandatória da seção 12 quando aplicável, mas não implementa um bloqueio de "função de liderança" em código, porque essa função não existe ainda como conceito no sistema. Nenhuma fase anterior modela "nomear alguém como líder de GR" como uma ação de aplicação (a associação `groups.leader_id` é definida apenas via seed/administração direta do banco). Da mesma forma, "Testes de serviço (6 cenários)" do roadmap não foi implementado: `CLAUDE.md` seção 9 lista como obrigatórios apenas os módulos de regra de negócio pura (`absences.ts`, `visitors.ts`, `eligibility.ts`) e não inclui um módulo de regra de negócio dedicado a `service_assignments` — a única regra pura de serviço (`canStartServiceAssignment`) já está coberta pelos 7 cenários de `eligibility.test.ts`, e testar `startServiceAssignment`/`endServiceAssignment` exigiria mockar o cliente Supabase, o que não está no escopo obrigatório desta fase.
+**Motivo:** Implementar um fluxo de "atribuir função de liderança" sem essa modelagem já existir no documento mestre ou em fases anteriores seria inventar um comportamento não descrito, violando a seção 12. `isEligibleToLeadFormatively` já fica disponível para uso futuro (ex.: Fase 9 — painéis, ou uma futura Fase de administração de papéis) sem duplicação de regra. Fica pendente de definição do responsável pelo produto sobre onde/como uma "função de liderança" deve ser atribuída no sistema.
+
 ---
 
 ## Decisões Pendentes
 
 - Definir mecanismo de notificações internas para casos de pastoreio (criado, escalado) — ver DEC-021.
+- Definir onde/como o sistema deve expor um fluxo de atribuição de "função de liderança" que consulte `isEligibleToLeadFormatively` — ver DEC-025.
 
