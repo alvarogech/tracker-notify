@@ -4,6 +4,7 @@ import { requireRole } from '@/lib/auth/server'
 
 const ADMIN_NAV_ITEMS: NavItem[] = [
   { href: '/admin', label: 'Painel', icon: 'LayoutDashboard' },
+  { href: '/admin/solicitacoes', label: 'Solicitações', icon: 'Inbox' },
   { href: '/coordenacao', label: 'GRs', icon: 'Building2' },
   { href: '/pessoas', label: 'Pessoas', icon: 'Users' },
   { href: '/casos', label: 'Casos', icon: 'HeartHandshake' },

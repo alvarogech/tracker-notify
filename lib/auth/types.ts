@@ -6,4 +6,5 @@ export interface UserProfile {
   email: string
   role: UserRole
   active: boolean
+  pending_approval: boolean
 }

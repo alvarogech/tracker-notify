@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, CalendarDays, Users, HeartHandshake, LayoutDashboard, Building2 } from 'lucide-react'
+import { Home, CalendarDays, Users, HeartHandshake, LayoutDashboard, Building2, Inbox } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const ICON_MAP = {
@@ -12,6 +12,7 @@ const ICON_MAP = {
   HeartHandshake,
   LayoutDashboard,
   Building2,
+  Inbox,
 }
 
 export type NavIconName = keyof typeof ICON_MAP

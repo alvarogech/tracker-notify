@@ -6,7 +6,7 @@ import { StatTile } from '@/components/dashboard/StatTile'
 import { GroupCard } from '@/components/groups/GroupCard'
 import { shouldSuggestConversion } from '@/lib/business-rules/visitors'
 import { isReportWithinDeadline } from '@/lib/business-rules/absences'
-import { Building2, Users, UserRoundPlus, HeartHandshake, AlertTriangle, ClipboardX } from 'lucide-react'
+import { Building2, Users, UserRoundPlus, HeartHandshake, AlertTriangle, ClipboardX, Inbox } from 'lucide-react'
 
 export const metadata: Metadata = { title: 'Painel Administrativo' }
 
@@ -44,12 +44,13 @@ export default async function AdminPage() {
   await requireRole(['admin'])
   const supabase = createClient()
 
-  const [groupsRes, relationshipsRes, visitsRes, casesRes, meetingsRes] = await Promise.all([
+  const [groupsRes, relationshipsRes, visitsRes, casesRes, meetingsRes, pendingRes] = await Promise.all([
     supabase.from('groups').select('id, name, location, day_of_week, meeting_time, active, leader:profiles(full_name)').order('name'),
     supabase.from('group_relationships').select('id, group_id, type').eq('status', 'active'),
     supabase.from('visitor_visits').select('group_relationship_id'),
     supabase.from('pastoral_cases').select('id, group_id, status, escalated_at'),
     supabase.from('meetings').select('id, group_id, status, scheduled_at'),
+    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('pending_approval', true).eq('signup_source', 'self'),
   ])
 
   const groups = (groupsRes.data ?? []) as unknown as GroupRow[]
@@ -57,6 +58,7 @@ export default async function AdminPage() {
   const visits = (visitsRes.data ?? []) as unknown as { group_relationship_id: string }[]
   const cases = (casesRes.data ?? []) as unknown as PastoralCaseRow[]
   const meetings = (meetingsRes.data ?? []) as unknown as MeetingRow[]
+  const pendingSignups = pendingRes.count ?? 0
 
   const visitCountByRelationship = new Map<string, number>()
   for (const v of visits) {
@@ -90,6 +92,14 @@ export default async function AdminPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
+        <Link href="/admin/solicitacoes" className="block">
+          <StatTile
+            label="Solicitações pendentes"
+            value={pendingSignups}
+            icon={Inbox}
+            variant={pendingSignups > 0 ? 'warning' : 'default'}
+          />
+        </Link>
         <StatTile label="GRs ativos" value={activeGroups.length} icon={Building2} />
         <StatTile label="Membros ativos" value={members.length} icon={Users} />
         <StatTile

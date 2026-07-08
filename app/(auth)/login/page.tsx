@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
+import Link from 'next/link'
 import { LoginForm } from '@/components/auth/LoginForm'
 import { HuiosLogo } from '@/components/brand/HuiosLogo'
 
@@ -15,6 +16,12 @@ export default function LoginPage() {
       <Suspense>
         <LoginForm />
       </Suspense>
+      <p className="text-center text-xs text-huios-cream/40">
+        É líder de GR e ainda não tem acesso?{' '}
+        <Link href="/cadastro-lider" className="text-huios-cream/70 hover:text-huios-cream underline">
+          Cadastre-se
+        </Link>
+      </p>
     </div>
   )
 }

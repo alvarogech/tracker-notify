@@ -135,10 +135,23 @@ Registro de decisões de arquitetura e produto. Atualizar sempre que uma decisã
 **Decisão:** A Fase 7 implementa o cálculo de aptidão formativa para liderar (`isEligibleToLeadFormatively`) e a exibição da frase mandatória da seção 12 quando aplicável, mas não implementa um bloqueio de "função de liderança" em código, porque essa função não existe ainda como conceito no sistema. Nenhuma fase anterior modela "nomear alguém como líder de GR" como uma ação de aplicação (a associação `groups.leader_id` é definida apenas via seed/administração direta do banco). Da mesma forma, "Testes de serviço (6 cenários)" do roadmap não foi implementado: `CLAUDE.md` seção 9 lista como obrigatórios apenas os módulos de regra de negócio pura (`absences.ts`, `visitors.ts`, `eligibility.ts`) e não inclui um módulo de regra de negócio dedicado a `service_assignments` — a única regra pura de serviço (`canStartServiceAssignment`) já está coberta pelos 7 cenários de `eligibility.test.ts`, e testar `startServiceAssignment`/`endServiceAssignment` exigiria mockar o cliente Supabase, o que não está no escopo obrigatório desta fase.
 **Motivo:** Implementar um fluxo de "atribuir função de liderança" sem essa modelagem já existir no documento mestre ou em fases anteriores seria inventar um comportamento não descrito, violando a seção 12. `isEligibleToLeadFormatively` já fica disponível para uso futuro (ex.: Fase 9 — painéis, ou uma futura Fase de administração de papéis) sem duplicação de regra. Fica pendente de definição do responsável pelo produto sobre onde/como uma "função de liderança" deve ser atribuída no sistema.
 
+### DEC-026 — Autocadastro público de líder com aprovação administrativa obrigatória
+
+**Data:** 2026-07-08
+**Decisão:** Adicionada a rota pública `/cadastro-lider` onde um futuro líder informa seus dados e os do próprio GR (nome, dia, horário, local). O envio cria o usuário de autenticação e as linhas em `profiles`/`groups` imediatamente, mas com `active = false` e `pending_approval = true` — a pessoa não consegue acessar o sistema (cai em `/acesso-desativado`, que agora mostra uma mensagem distinta para "cadastro em análise") até que um administrador aprove pela nova tela `/admin/solicitacoes`. Rejeitar exclui permanentemente o usuário de autenticação, o perfil e o GR criados. Um código de convite (`LEADER_SIGNUP_CODE`, variável de ambiente secreta) é exigido no formulário como barreira mínima contra cadastros aleatórios, complementando — não substituindo — a aprovação manual.
+**Motivo:** O responsável pelo produto pediu uma forma de não precisar cadastrar cada líder manualmente, mas mantendo controle explícito sobre quem entra na rede (consistente com a seção 7 do CLAUDE.md, que reserva ao administrador a gestão de usuários). Criar o registro como inativo por padrão, em vez de usar uma tabela de "solicitação" separada, reaproveita o mecanismo de `active`/RLS já existente e testado, evitando duplicar a modelagem de acesso.
+
+### DEC-027 — Exportação CSV de GRs autocadastrados
+
+**Data:** 2026-07-08
+**Decisão:** Rota `GET /api/admin/export/grs`, restrita a `role = 'admin'` (checagem manual via `getCurrentProfile()`, já que `redirect()` de `next/navigation` não é apropriado dentro de um Route Handler), gera um CSV (sem dependência externa) com os GRs onde `signup_source = 'self'`: nome, líder, e-mail, dia/horário, local, status, data de cadastro e contagem de membros/visitantes ativos.
+**Motivo:** Pedido explícito do responsável pelo produto para poder analisar em planilha os dados que os próprios líderes cadastraram. CSV evita adicionar uma biblioteca de planilhas (xlsx/exceljs) para uma necessidade que um texto delimitado por vírgulas já resolve — abre nativamente no Excel e no Google Sheets.
+
 ---
 
 ## Decisões Pendentes
 
 - Definir mecanismo de notificações internas para casos de pastoreio (criado, escalado) — ver DEC-021.
 - Definir onde/como o sistema deve expor um fluxo de atribuição de "função de liderança" que consulte `isEligibleToLeadFormatively` — ver DEC-025.
+- Considerar um mecanismo de limitação de tentativas (rate limiting) em `/cadastro-lider` caso o código de convite vaze — hoje a única barreira além do código é a aprovação manual.
 

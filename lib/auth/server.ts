@@ -11,7 +11,7 @@ export async function getCurrentProfile(): Promise<UserProfile | null> {
   const admin = createAdminClient()
   const { data } = await admin
     .from('profiles')
-    .select('id, full_name, email, role, active')
+    .select('id, full_name, email, role, active, pending_approval')
     .eq('id', user.id)
     .single()
 

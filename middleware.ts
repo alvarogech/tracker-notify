@@ -1,7 +1,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const PUBLIC_ROUTES = ['/login', '/recuperar-senha']
+const PUBLIC_ROUTES = ['/login', '/recuperar-senha', '/cadastro-lider']
 // /acesso-desativado é separado: usuário logado pode ficar lá sem ser redirecionado
 const ALWAYS_PUBLIC = ['/acesso-desativado']
 
