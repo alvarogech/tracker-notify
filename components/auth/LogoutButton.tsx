@@ -14,7 +14,12 @@ export function LogoutButton() {
   }
 
   return (
-    <Button variant="outline" onClick={handleLogout} className="border-huios-cream/20 text-huios-cream/60 hover:text-huios-cream hover:bg-huios-cream/10">
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={handleLogout}
+      className="bg-transparent border-huios-cream/20 text-huios-cream/60 hover:text-huios-cream hover:bg-huios-cream/10"
+    >
       Sair da conta
     </Button>
   )
