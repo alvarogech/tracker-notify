@@ -55,6 +55,11 @@ jobs:
           LEADER_SIGNUP_CODE=ci-teste
           EOF
 
+      - name: "[Diagnóstico temporário] Inspecionar auth.users"
+        run: |
+          CLEAN_DB_URL=$(echo "$DB_URL" | tr -d '"')
+          psql "$CLEAN_DB_URL" -c "SELECT id, email, instance_id, aud, role, confirmation_token, recovery_token, email_change, email_change_token_new, email_change_token_current, phone_change, phone_change_token, reauthentication_token FROM auth.users ORDER BY email;"
+
       - name: Corrigir senhas dos usuários semeados via API do GoTrue
         run: node scripts/fix-seed-passwords.mjs
 
