@@ -257,6 +257,12 @@ Além dos 12, o painel da coordenação expõe "Casos escalados" (contagem de `p
 **Decisão:** `.github/workflows/supabase-backup.yml` roda `pg_dump -F c` diariamente (03:00 America/Sao_Paulo, mais disparo manual via `workflow_dispatch`) contra o banco de produção usando a connection string em `secrets.SUPABASE_DB_URL`, publicando o dump como artifact do GitHub Actions com retenção de 30 dias. Documentado em `docs/PILOTO_CHECKLIST.md` como "Opção B", alternativa ao backup nativo pago do Supabase (plano Pro, US$25/mês).
 **Motivo:** O responsável pelo produto decidiu liberar o cadastro de dados reais para os líderes e pediu uma forma de backup sem custo. O plano gratuito do Supabase não inclui backup automático nem PITR. `pg_dump` agendado via GitHub Actions cobre a exigência da seção 16 do CLAUDE.md ("backups estejam configurados") sem depender de upgrade de plano, usando apenas infraestrutura já gratuita (Actions em repositório privado). Não é um substituto de Point-in-Time Recovery — é um snapshot diário completo, suficiente para o estágio de piloto. Requer que o responsável pelo produto configure o secret `SUPABASE_DB_URL` e dispare uma execução manual de teste antes de contar com o agendamento automático.
 
+### DEC-038 — CI no GitHub Actions para rodar RLS/E2E de verdade
+
+**Data:** 2026-07-09
+**Decisão:** `.github/workflows/tests.yml` (disparo manual via `workflow_dispatch`, mais em todo push para `main`) sobe um Supabase local via Docker no runner do GitHub Actions (`supabase start` + `supabase db reset` para aplicar migrations e seed), roda as 8 suítes pgTAP (`supabase test db`) e os 10 cenários Playwright (`playwright test`) contra esse banco descartável, e publica o relatório do Playwright como artifact. `LEADER_SIGNUP_CODE=ci-teste` é fixado apenas no ambiente do job, sem relação com o código de convite real usado em produção.
+**Motivo:** O sandbox de desenvolvimento usado neste projeto não tem Docker disponível (DEC-035), impedindo executar de fato as suítes de teste escritas. Runners do GitHub Actions têm Docker habilitado por padrão, tornando esse o caminho gratuito mais direto para finalmente rodar RLS/E2E de verdade — sem exigir que o responsável pelo produto instale nada localmente. Este workflow nunca toca o banco de produção; todo o ciclo (subir, semear, testar, derrubar) acontece em um Postgres efêmero do próprio job.
+
 ---
 
 ## Decisões Pendentes
@@ -264,6 +270,6 @@ Além dos 12, o painel da coordenação expõe "Casos escalados" (contagem de `p
 - Definir mecanismo de notificações internas para casos de pastoreio (criado, escalado) — ver DEC-021.
 - Definir onde/como o sistema deve expor um fluxo de atribuição de "função de liderança" que consulte `isEligibleToLeadFormatively` — ver DEC-025.
 - Considerar um mecanismo de limitação de tentativas (rate limiting) em `/cadastro-lider` caso o código de convite vaze — hoje a única barreira além do código é a aprovação manual.
-- Executar de fato as suítes de RLS (pgTAP) e E2E (Playwright) escritas na DEC-035 assim que houver Docker/CI disponível — permanecem não executadas neste ambiente de sandbox.
+- Disparar `.github/workflows/tests.yml` (DEC-038) e confirmar resultado verde antes de aprovar dados reais — a suíte está pronta mas ainda não foi executada em nenhum ambiente real até a escrita desta nota.
 - Definir campos/comportamento de "Filtros e busca consolidada" para a coordenação — ver DEC-034.
 

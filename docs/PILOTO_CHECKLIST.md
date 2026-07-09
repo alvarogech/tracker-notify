@@ -72,16 +72,16 @@ Até essa aprovação, o piloto continua rodando exclusivamente com os dados fic
 
 ## 4. Executar de fato as suítes de RLS e E2E antes do piloto
 
-`docs/DECISIONS.md`, **DEC-035**, documenta que as suítes de teste de RLS (pgTAP, `supabase/tests/database/`) e E2E (Playwright, `tests/e2e/`) foram **escritas e revisadas por leitura**, mas **nunca executadas de fato** em nenhum ambiente — o sandbox de desenvolvimento usado até aqui não tem Docker disponível, o que impede subir um Postgres local para rodar `supabase test db` e servir o app para o Playwright.
+`docs/DECISIONS.md`, **DEC-035**, documenta que as suítes de teste de RLS (pgTAP, `supabase/tests/database/`) e E2E (Playwright, `tests/e2e/`) foram **escritas e revisadas por leitura**, mas não puderam ser executadas no sandbox de desenvolvimento usado até aqui (sem Docker disponível). Isso significa que a checagem "RLS testada e validada" do item 3.2 acima **não pode ser marcada como concluída só por essas suítes existirem** — elas precisam efetivamente rodar, com resultado verde, antes ou durante o piloto (não depois).
 
-Isso significa que a checagem "RLS testada e validada" do item 3.2 acima **não pode ser marcada como concluída só por essas suítes existirem** — elas precisam efetivamente rodar, com resultado verde, antes ou durante o piloto (não depois). Os passos, já descritos na DEC-035, são:
+**`.github/workflows/tests.yml`** já automatiza isso — sobe um Postgres local via Docker (disponível nos runners do GitHub Actions), aplica migrations + seed, roda as 8 suítes pgTAP e os 10 cenários Playwright, tudo isolado do banco de produção. Para rodar:
 
-1. `pnpm supabase:start` (requer Docker Desktop local ou um runner de CI com Docker habilitado).
-2. `pnpm supabase:test` — roda os 4 arquivos pgTAP via `pg_prove`.
-3. `pnpm dev` (ou o `webServer` do `playwright.config.ts`) apontando para esse banco local semeado, seguido de `pnpm test:e2e`.
-4. Para o cenário de conta pendente de aprovação em `auth.spec.ts`, definir `LEADER_SIGNUP_CODE` no ambiente de teste.
+1. No GitHub: **Actions → Testes (RLS + E2E) → Run workflow**.
+2. Aguardar a execução (alguns minutos) e conferir se todos os steps ficaram verdes.
+3. Se algo falhar, o relatório do Playwright fica disponível como artifact do run para investigação.
+4. Nenhum secret adicional é necessário — o workflow usa apenas o Supabase local descartável, nunca o banco de produção.
 
-Ação recomendada: rodar isso em uma máquina com Docker disponível (local do desenvolvedor) ou configurar um pipeline de CI (GitHub Actions, por exemplo) que tenha Docker habilitado, antes de considerar o piloto com dados fictícios como validado o suficiente para avançar para dados reais.
+Ação recomendada: disparar este workflow e confirmar resultado verde antes de considerar o item (2) da seção 3 abaixo como concluído. Alternativa (sem GitHub Actions): rodar `pnpm supabase:start && pnpm supabase:test` e `pnpm test:e2e` numa máquina com Docker Desktop instalado.
 
 ---
 
@@ -92,4 +92,4 @@ Ação recomendada: rodar isso em uma máquina com Docker disponível (local do 
 | 1. Backups no Supabase | Administrador da conta Supabase | Sim |
 | 2. Variáveis de ambiente na Netlify | Quem tem acesso ao dashboard Netlify | Sim (app não funciona em produção sem isso) |
 | 3. Aprovação explícita (CLAUDE.md §16) | Responsável pelo produto | Sim — é o gate final |
-| 4. Rodar RLS/E2E de verdade | Desenvolvedor com acesso a Docker/CI | Sim (pré-requisito do item 3.2) |
+| 4. Rodar RLS/E2E de verdade | Disparar `.github/workflows/tests.yml` no GitHub Actions (sem Docker local necessário) | Sim (pré-requisito do item 3.2) |
