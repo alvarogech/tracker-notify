@@ -293,6 +293,12 @@ Além dos 12, o painel da coordenação expõe "Casos escalados" (contagem de `p
 **Decisão:** `supabase/seed.sql` agora insere `auth.users` especificando explicitamente `instance_id = '00000000-0000-0000-0000-000000000000'`, `aud = 'authenticated'`, `role = 'authenticated'` e todas as colunas de token (`confirmation_token`, `recovery_token`, `email_change_token_new`, `email_change`, `email_change_token_current`, `phone_change`, `phone_change_token`, `reauthentication_token`) como string vazia `''`, em vez de deixá-las no valor padrão da coluna. Removida a etapa temporária de diagnóstico `[Diagnóstico temporário] Inspecionar auth.users` do workflow.
 **Motivo:** A quinta execução real do workflow (após a DEC-042 corrigir a URL) trocou o erro `Invalid supabaseUrl` por `User not found` em `updateUserById()`, e `admin.listUsers()` retornava `[]` — nenhum usuário visível para a API admin do GoTrue, mesmo a etapa de seed tendo rodado sem erro e os 7 registros existindo em `auth.users` (confirmado via `SELECT` direto por `psql` numa etapa de diagnóstico temporária). A API admin do GoTrue filtra internamente por `instance_id`; como o INSERT original de `supabase/seed.sql` não especificava essa coluna, ela ficava com seu valor padrão (não necessariamente o UUID zerado que o GoTrue local usa como instância corrente), fazendo toda consulta administrativa por `id` ou listagem não encontrar nenhuma linha — mesmo com os dados presentes e corretos na tabela. Preencher `instance_id`/`aud`/`role`/tokens explicitamente é a prática documentada da comunidade Supabase para seeds manuais de `auth.users` e não muda nenhum comportamento já em produção (só adiciona valores explícitos onde antes havia o padrão da coluna).
 
+### DEC-044 — `pg_dump` do backup precisa ser da mesma versão major do Postgres de produção
+
+**Data:** 2026-07-09
+**Decisão:** `.github/workflows/supabase-backup.yml` passa a usar a imagem de container `postgres:17` (antes `postgres:15`) para rodar o `pg_dump`.
+**Motivo:** Ao testar manualmente o workflow de backup pela primeira vez (após o responsável pelo produto cadastrar o secret `SUPABASE_DB_URL`), a execução falhou com `pg_dump: error: aborting because of server version mismatch — server version: 17.6; pg_dump version: 15.18`. O `pg_dump` recusa fazer dump de um servidor com versão major mais nova que a sua própria. O projeto Supabase de produção roda Postgres 17; a imagem do container precisa acompanhar essa versão (ou mais nova) para o backup funcionar.
+
 ---
 
 ## Decisões Pendentes

@@ -10,7 +10,7 @@ jobs:
   backup:
     runs-on: ubuntu-latest
     container:
-      image: postgres:15
+      image: postgres:17
     steps:
       - name: Rodar pg_dump
         env:
