@@ -203,6 +203,24 @@ Além dos 12, o painel da coordenação expõe "Casos escalados" (contagem de `p
 **Decisão:** O item de roadmap "Filtros e busca consolidada" da Fase 9 não foi implementado.
 **Motivo:** É uma peça de UI genuinamente separada (busca/filtro textual sobre GRs e pessoas na visão da coordenação) sem especificação de produto sobre quais campos, comportamento de filtro combinado ou onde deve viver na navegação — implementá-la por adivinhação arriscaria inventar comportamento de UX não pedido. Os dashboards desta fase já dão à coordenação visão consolidada por contagens/taxas; busca/filtro fica pendente de definição do responsável pelo produto, assim como os demais itens já registrados em "Decisões Pendentes" abaixo.
 
+### DEC-035 — Suítes de testes de RLS (pgTAP) e E2E (Playwright) escritas, não executadas neste ambiente
+
+**Data:** 2026-07-09
+**Decisão:** Criados `supabase/tests/database/01_profiles_recursion.test.sql`, `02_leader_isolation.test.sql`, `03_coordinator_admin_access.test.sql` e `04_anon_denied.test.sql` (8 cenários de RLS exigidos pela CLAUDE.md seção 9, um por linha comentada em cada arquivo) e `tests/e2e/auth.spec.ts`, `meetings.spec.ts`, `people.spec.ts`, `pastoral-cases.spec.ts`, `leader-signup.spec.ts` (10 cenários E2E críticos exigidos pela mesma seção). Nenhuma das duas suítes pôde ser efetivamente executada neste ambiente de sandbox, por uma restrição de infraestrutura, não de código:
+
+- **Docker não está disponível** neste sandbox (o daemon não inicia — restrição de permissões do ambiente). `supabase start`/`pnpm supabase:start` dependem de Docker para subir Postgres + Auth localmente.
+- `pnpm supabase:test` (`supabase test db`) foi executado uma vez para confirmar a causa real da falha: `{"code":"LegacyDbConnectError","message":"failed to connect to postgres: ... PgClient: Failed to connect"}` — falha de conexão, não erro de sintaxe SQL. As 4 migrations/policies referenciadas pelos testes foram lidas integralmente antes da escrita (todas as `supabase/migrations/*.sql`), e cada asserção usa ids fixos do `supabase/seed.sql` (nunca dados inventados), mas a correção das consultas não pôde ser confirmada por execução real — apenas por leitura cuidadosa.
+- `pnpm test:e2e` foi executado uma vez (`npx playwright test tests/e2e/home.spec.ts --project=chromium`, com timeout externo de 45s) e travou esperando o `webServer` (`pnpm dev`, definido em `playwright.config.ts`) ficar saudável em `localhost:3000` — nunca fica, pois este worktree não tem `.env.local` com credenciais Supabase válidas e não há banco semeado alcançável. Como alternativa, `npx playwright test --list` foi executado com sucesso (não depende de `webServer`) e confirmou que as 4 novas specs + `home.spec.ts` pré-existente somam exatamente **33 testes** (11 cenários × 3 projetos: chromium, Mobile Chrome, Mobile Safari) — ou seja, todos os arquivos são TypeScript válido e todos os 10 cenários novos são reconhecidos estruturalmente pelo Playwright.
+- `pnpm lint`, `pnpm typecheck`, `pnpm test` (84 testes unitários) e `pnpm build` rodaram limpos incluindo os novos arquivos `.ts`/`.spec.ts` (o `pnpm lint` mostrou apenas o conflito conhecido e inócuo do plugin `@next/next` por causa do path de worktree aninhado, já documentado como inofensivo em fases anteriores). Os arquivos `.sql` de `supabase/tests/database/` não são cobertos por nenhum desses quatro comandos — isso é esperado, pgTAP só roda via `supabase test db`.
+
+**Para rodar de fato (fora deste sandbox):**
+1. `pnpm supabase:start` (exige Docker Desktop ou um runner de CI com Docker habilitado) — sobe Postgres + Auth locais e aplica `supabase/migrations/` + `supabase/seed.sql`.
+2. `pnpm supabase:test` (`supabase test db`) — roda os 4 arquivos pgTAP via `pg_prove` contra esse banco local.
+3. `pnpm dev` (ou deixar o `webServer` do `playwright.config.ts` subir automaticamente) apontando `NEXT_PUBLIC_SUPABASE_URL`/`NEXT_PUBLIC_SUPABASE_ANON_KEY`/`SUPABASE_SERVICE_ROLE_KEY` em `.env.local` para esse mesmo banco local semeado; então `pnpm test:e2e` (ou `BASE_URL=... pnpm test:e2e` contra um ambiente de homologação também semeado como o seed).
+4. Para o cenário 3 de `auth.spec.ts` (conta pendente de aprovação), definir `LEADER_SIGNUP_CODE` no ambiente antes de rodar os testes — sem essa variável o teste é pulado (`test.skip`) explicitamente, não falha silenciosamente.
+
+**Importante:** em nenhum momento este trabalho usou ou tentou usar o `.env.local` do piloto implantado (não presente neste worktree) — a restrição do ambiente foi respeitada integralmente; nenhuma suíte foi apontada para um banco real/produção.
+
 ---
 
 ## Decisões Pendentes
@@ -210,6 +228,6 @@ Além dos 12, o painel da coordenação expõe "Casos escalados" (contagem de `p
 - Definir mecanismo de notificações internas para casos de pastoreio (criado, escalado) — ver DEC-021.
 - Definir onde/como o sistema deve expor um fluxo de atribuição de "função de liderança" que consulte `isEligibleToLeadFormatively` — ver DEC-025.
 - Considerar um mecanismo de limitação de tentativas (rate limiting) em `/cadastro-lider` caso o código de convite vaze — hoje a única barreira além do código é a aprovação manual.
-- Criar infraestrutura de testes de RLS via SQL (`supabase/tests/`) — nenhuma fase até a 8 criou esse mecanismo; testes de acesso hoje dependem apenas da leitura manual das policies.
+- Executar de fato as suítes de RLS (pgTAP) e E2E (Playwright) escritas na DEC-035 assim que houver Docker/CI disponível — permanecem não executadas neste ambiente de sandbox.
 - Definir campos/comportamento de "Filtros e busca consolidada" para a coordenação — ver DEC-034.
 

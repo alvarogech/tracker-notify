@@ -242,7 +242,7 @@ Entregas:
 **Objetivo:** Revisão completa, acessibilidade e deploy de homologação.
 
 Entregas:
-- [ ] Revisão completa de RLS (todos os cenários)
+- [x] Revisão completa de RLS (todos os cenários) — 8 cenários pgTAP em `supabase/tests/database/` cobrindo isolamento de líder (leitura e escrita, inclusive por id direto), visão de rede da coordenação, escrita completa do admin, negação padrão ao anônimo e a regressão da recursão de `profiles`; **escritos mas não executados neste ambiente** por falta de Docker — ver DEC-035 em `docs/DECISIONS.md`
 - [ ] Revisão de logs (sem dados sensíveis)
 - [ ] Acessibilidade: labels, contraste, foco, ARIA, HTML semântico
 - [ ] Responsividade a partir de 320px
