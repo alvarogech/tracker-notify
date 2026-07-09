@@ -9,6 +9,7 @@ on:
 jobs:
   rls-and-e2e:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,7 +29,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Instalar navegadores do Playwright
-        run: pnpm exec playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chromium webkit
 
       - name: Subir Supabase local (Docker)
         run: pnpm exec supabase start
@@ -53,6 +54,9 @@ jobs:
           WHATSAPP_PROVIDER=mock
           LEADER_SIGNUP_CODE=ci-teste
           EOF
+
+      - name: Corrigir senhas dos usuários semeados via API do GoTrue
+        run: node scripts/fix-seed-passwords.mjs
 
       - name: Rodar testes E2E (Playwright)
         env:
