@@ -103,6 +103,7 @@ export function ServiceAssignmentsPanel({
                 <select
                   value={selected}
                   onChange={(e) => setSelected(e.target.value)}
+                  aria-label="Área de serviço"
                   className="h-10 flex-1 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 >
                   {areaOptions.map((option) => (

@@ -110,35 +110,82 @@ export default async function PersonPage({ params }: { params: { id: string } })
 
   const person = rel.person
 
-  let visitCount = 0
-  if (rel.type === 'visitor') {
-    const { data: visits } = await supabase
-      .from('visitor_visits')
-      .select('visited_at')
-      .eq('group_relationship_id', rel.id)
-    visitCount = countVisits(
-      ((visits ?? []) as { visited_at: string }[]).map((v) => ({
-        visitedAt: new Date(v.visited_at),
-      }))
-    )
-  }
+  const canTransfer = profile.role === 'coordinator' || profile.role === 'admin'
+  const isMemberWithGroup = rel.type === 'member' && !!rel.group
 
-  const { data: openCaseData } = await supabase
-    .from('pastoral_cases')
-    .select('id, status, escalated_at')
-    .eq('person_id', person.id)
-    .eq('status', 'open')
-    .maybeSingle()
+  // Nenhuma destas consultas depende do resultado de outra — todas usam
+  // apenas `person.id`/`rel.group.id`, já conhecidos após a consulta acima.
+  // Buscadas em paralelo para evitar 6+ idas sequenciais ao banco por painel.
+  const [
+    visitsRes,
+    openCaseRes,
+    assignmentRes,
+    disciplerRes,
+    programsRes,
+    recordsRes,
+    areasRes,
+    serviceRes,
+    hostRes,
+    cooperatorRes,
+    transferGroupsRes,
+  ] = await Promise.all([
+    rel.type === 'visitor'
+      ? supabase.from('visitor_visits').select('visited_at').eq('group_relationship_id', rel.id)
+      : Promise.resolve({ data: [] as { visited_at: string }[] }),
+    supabase
+      .from('pastoral_cases')
+      .select('id, status, escalated_at')
+      .eq('person_id', person.id)
+      .eq('status', 'open')
+      .maybeSingle(),
+    supabase
+      .from('discipleship_assignments')
+      .select('id, started_at, ended_at, discipler:profiles(id, full_name)')
+      .eq('person_id', person.id)
+      .order('started_at', { ascending: false }),
+    supabase
+      .from('profiles')
+      .select('id, full_name')
+      .eq('active', true)
+      .in('role', ['leader', 'coordinator', 'admin'])
+      .order('full_name'),
+    supabase.from('training_programs').select('id, code, name, display_order').order('display_order'),
+    supabase.from('training_records').select('program_id, completed_at').eq('person_id', person.id),
+    supabase.from('ministry_areas').select('id, name').order('name'),
+    supabase
+      .from('service_assignments')
+      .select('id, started_at, ended_at, ministry_area:ministry_areas(id, name)')
+      .eq('person_id', person.id)
+      .order('started_at', { ascending: false }),
+    isMemberWithGroup && rel.group
+      ? supabase
+          .from('group_hosts')
+          .select('id, person_id, started_at, host:people(id, full_name)')
+          .eq('group_id', rel.group.id)
+          .is('ended_at', null)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    isMemberWithGroup && rel.group
+      ? supabase
+          .from('group_cooperators')
+          .select('id, started_at, ended_at')
+          .eq('person_id', person.id)
+          .eq('group_id', rel.group.id)
+          .is('ended_at', null)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    canTransfer && rel.type === 'member'
+      ? supabase.from('groups').select('id, name').eq('active', true).order('name')
+      : Promise.resolve({ data: [] as GroupOptionRow[] }),
+  ])
 
-  const openCase = openCaseData as OpenCaseRow | null
+  const visitCount = countVisits(
+    (visitsRes.data as { visited_at: string }[]).map((v) => ({ visitedAt: new Date(v.visited_at) }))
+  )
 
-  const { data: assignmentData } = await supabase
-    .from('discipleship_assignments')
-    .select('id, started_at, ended_at, discipler:profiles(id, full_name)')
-    .eq('person_id', person.id)
-    .order('started_at', { ascending: false })
+  const openCase = openCaseRes.data as OpenCaseRow | null
 
-  const rawAssignments = (assignmentData ?? []) as unknown as AssignmentRow[]
+  const rawAssignments = (assignmentRes.data ?? []) as unknown as AssignmentRow[]
   const assignments = rawAssignments.map((a) => ({
     id: a.id,
     disciplerId: a.discipler?.id ?? null,
@@ -149,29 +196,12 @@ export default async function PersonPage({ params }: { params: { id: string } })
   const activeAssignment = assignments.find((a) => a.endedAt === null) ?? null
   const history = assignments.filter((a) => a.endedAt !== null)
 
-  const { data: disciplerData } = await supabase
-    .from('profiles')
-    .select('id, full_name')
-    .eq('active', true)
-    .in('role', ['leader', 'coordinator', 'admin'])
-    .order('full_name')
-
-  const disciplerOptions = ((disciplerData ?? []) as { id: string; full_name: string }[])
+  const disciplerOptions = ((disciplerRes.data ?? []) as { id: string; full_name: string }[])
     .filter((d) => d.id !== activeAssignment?.disciplerId)
     .map((d) => ({ id: d.id, fullName: d.full_name }))
 
-  const { data: programsData } = await supabase
-    .from('training_programs')
-    .select('id, code, name, display_order')
-    .order('display_order')
-
-  const { data: recordsData } = await supabase
-    .from('training_records')
-    .select('program_id, completed_at')
-    .eq('person_id', person.id)
-
-  const trainingPrograms = (programsData ?? []) as unknown as TrainingProgramRow[]
-  const trainingRecords = (recordsData ?? []) as unknown as TrainingRecordRow[]
+  const trainingPrograms = (programsRes.data ?? []) as unknown as TrainingProgramRow[]
+  const trainingRecords = (recordsRes.data ?? []) as unknown as TrainingRecordRow[]
   const completedAtByProgramId = new Map(trainingRecords.map((r) => [r.program_id, r.completed_at]))
 
   const programStatuses = trainingPrograms.map((program) => ({
@@ -186,19 +216,8 @@ export default async function PersonPage({ params }: { params: { id: string } })
   const eligibleToServe = isEligibleToServe(completedProgramCodes)
   const eligibleToLeadFormatively = isEligibleToLeadFormatively(completedProgramCodes)
 
-  const { data: areasData } = await supabase
-    .from('ministry_areas')
-    .select('id, name')
-    .order('name')
-
-  const { data: serviceData } = await supabase
-    .from('service_assignments')
-    .select('id, started_at, ended_at, ministry_area:ministry_areas(id, name)')
-    .eq('person_id', person.id)
-    .order('started_at', { ascending: false })
-
-  const ministryAreas = (areasData ?? []) as unknown as MinistryAreaRow[]
-  const rawServiceAssignments = (serviceData ?? []) as unknown as ServiceAssignmentRow[]
+  const ministryAreas = (areasRes.data ?? []) as unknown as MinistryAreaRow[]
+  const rawServiceAssignments = (serviceRes.data ?? []) as unknown as ServiceAssignmentRow[]
   const serviceAssignments = rawServiceAssignments.map((a) => ({
     id: a.id,
     areaId: a.ministry_area?.id ?? null,
@@ -219,53 +238,27 @@ export default async function PersonPage({ params }: { params: { id: string } })
   let activeCooperatorAssignmentId: string | null = null
   let activeCooperatorStartedAt: string | null = null
 
-  if (rel.type === 'member' && rel.group) {
-    const { data: hostData } = await supabase
-      .from('group_hosts')
-      .select('id, person_id, started_at, host:people(id, full_name)')
-      .eq('group_id', rel.group.id)
-      .is('ended_at', null)
-      .maybeSingle()
-
-    const hostRow = hostData as unknown as GroupHostRow | null
-    if (hostRow) {
-      activeHost = {
-        id: hostRow.id,
-        personId: hostRow.person_id,
-        personName: hostRow.host?.full_name ?? 'Pessoa removida',
-        startedAt: hostRow.started_at,
-      }
-      isCurrentHost = hostRow.person_id === person.id
+  const hostRow = hostRes.data as unknown as GroupHostRow | null
+  if (hostRow) {
+    activeHost = {
+      id: hostRow.id,
+      personId: hostRow.person_id,
+      personName: hostRow.host?.full_name ?? 'Pessoa removida',
+      startedAt: hostRow.started_at,
     }
-
-    const { data: cooperatorData } = await supabase
-      .from('group_cooperators')
-      .select('id, started_at, ended_at')
-      .eq('person_id', person.id)
-      .eq('group_id', rel.group.id)
-      .is('ended_at', null)
-      .maybeSingle()
-
-    const cooperatorRow = cooperatorData as unknown as GroupCooperatorRow | null
-    if (cooperatorRow) {
-      isActiveCooperatorRole = true
-      activeCooperatorAssignmentId = cooperatorRow.id
-      activeCooperatorStartedAt = cooperatorRow.started_at
-    }
+    isCurrentHost = hostRow.person_id === person.id
   }
 
-  const canTransfer = profile.role === 'coordinator' || profile.role === 'admin'
-  let transferGroupOptions: { id: string; name: string }[] = []
-  if (canTransfer && rel.type === 'member') {
-    const { data: groupsData } = await supabase
-      .from('groups')
-      .select('id, name')
-      .eq('active', true)
-      .order('name')
-    transferGroupOptions = ((groupsData ?? []) as unknown as GroupOptionRow[]).filter(
-      (g) => g.id !== rel.group?.id
-    )
+  const cooperatorRow = cooperatorRes.data as unknown as GroupCooperatorRow | null
+  if (cooperatorRow) {
+    isActiveCooperatorRole = true
+    activeCooperatorAssignmentId = cooperatorRow.id
+    activeCooperatorStartedAt = cooperatorRow.started_at
   }
+
+  const transferGroupOptions = ((transferGroupsRes.data ?? []) as unknown as GroupOptionRow[]).filter(
+    (g) => g.id !== rel.group?.id
+  )
 
   return (
     <div className="space-y-6">

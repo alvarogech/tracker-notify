@@ -9,7 +9,7 @@ export default function RecoverPasswordPage() {
     <div className="w-full max-w-sm space-y-8">
       <div className="flex flex-col items-center gap-2">
         <HuiosLogo variant="light" size="lg" />
-        <p className="text-huios-cream/50 text-sm tracking-wide">Pastoreio</p>
+        <p className="text-huios-cream/60 text-sm tracking-wide">Pastoreio</p>
       </div>
       <RecoverPasswordForm />
     </div>

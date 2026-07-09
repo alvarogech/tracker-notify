@@ -136,18 +136,22 @@ export default async function CoordenaçãoPage() {
   const memberIds = members.map((m) => m.person_id)
 
   const visitorRelIds = visitors.map((v) => v.id)
+
+  const [visitsRes, trainingRecordsRes] = await Promise.all([
+    visitorRelIds.length > 0
+      ? supabase.from('visitor_visits').select('group_relationship_id').in('group_relationship_id', visitorRelIds)
+      : Promise.resolve({ data: [] as { group_relationship_id: string }[] }),
+    memberIds.length > 0
+      ? supabase.from('training_records').select('person_id, program:training_programs(code)').in('person_id', memberIds)
+      : Promise.resolve({ data: [] as unknown[] }),
+  ])
+
   const visitCountByRelationship = new Map<string, number>()
-  if (visitorRelIds.length > 0) {
-    const { data: visitsData } = await supabase
-      .from('visitor_visits')
-      .select('group_relationship_id')
-      .in('group_relationship_id', visitorRelIds)
-    for (const v of (visitsData ?? []) as { group_relationship_id: string }[]) {
-      visitCountByRelationship.set(
-        v.group_relationship_id,
-        (visitCountByRelationship.get(v.group_relationship_id) ?? 0) + 1
-      )
-    }
+  for (const v of (visitsRes.data ?? []) as { group_relationship_id: string }[]) {
+    visitCountByRelationship.set(
+      v.group_relationship_id,
+      (visitCountByRelationship.get(v.group_relationship_id) ?? 0) + 1
+    )
   }
   const visitorsPendingConversionCount = visitors.filter((v) =>
     shouldSuggestConversion(visitCountByRelationship.get(v.id) ?? 0)
@@ -212,17 +216,11 @@ export default async function CoordenaçãoPage() {
   const serviceCoverage = computeCoverageRate(memberIds.map((id) => activeServicePersonIds.has(id)))
 
   const completedByPerson = new Map<string, string[]>()
-  if (memberIds.length > 0) {
-    const { data: recordsData } = await supabase
-      .from('training_records')
-      .select('person_id, program:training_programs(code)')
-      .in('person_id', memberIds)
-    for (const r of (recordsData ?? []) as unknown as TrainingRecordRow[]) {
-      if (!r.program) continue
-      const list = completedByPerson.get(r.person_id) ?? []
-      list.push(r.program.code)
-      completedByPerson.set(r.person_id, list)
-    }
+  for (const r of (trainingRecordsRes.data ?? []) as unknown as TrainingRecordRow[]) {
+    if (!r.program) continue
+    const list = completedByPerson.get(r.person_id) ?? []
+    list.push(r.program.code)
+    completedByPerson.set(r.person_id, list)
   }
   const culturaCoverage = computeCoverageRate(
     memberIds.map((id) => (completedByPerson.get(id) ?? []).includes('cultura_emaus'))

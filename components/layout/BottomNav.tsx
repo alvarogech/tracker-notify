@@ -44,12 +44,12 @@ export function BottomNav({ items = DEFAULT_ITEMS }: { items?: NavItem[] }) {
               key={href}
               href={href}
               className={cn(
-                'flex flex-1 flex-col items-center gap-1 py-2.5 text-xs font-medium transition-colors',
+                'flex min-w-0 flex-1 flex-col items-center gap-1 py-2.5 text-xs font-medium transition-colors',
                 active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
               )}
             >
               <Icon size={20} strokeWidth={active ? 2.5 : 2} />
-              {label}
+              <span className="w-full break-words text-center leading-tight">{label}</span>
             </Link>
           )
         })}

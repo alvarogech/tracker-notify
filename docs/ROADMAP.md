@@ -243,16 +243,16 @@ Entregas:
 
 Entregas:
 - [x] Revisão completa de RLS (todos os cenários) — 8 cenários pgTAP em `supabase/tests/database/` cobrindo isolamento de líder (leitura e escrita, inclusive por id direto), visão de rede da coordenação, escrita completa do admin, negação padrão ao anônimo e a regressão da recursão de `profiles`; **escritos mas não executados neste ambiente** por falta de Docker — ver DEC-035 em `docs/DECISIONS.md`
-- [ ] Revisão de logs (sem dados sensíveis)
-- [ ] Acessibilidade: labels, contraste, foco, ARIA, HTML semântico
-- [ ] Responsividade a partir de 320px
-- [ ] Performance: sem N+1, paginação, índices
-- [ ] Build de produção sem erros
-- [ ] Deploy no Vercel (homologação)
-- [ ] Configuração de backups no Supabase
-- [ ] Documentação de treinamento para líderes
-- [ ] Piloto com dados fictícios
-- [ ] Aprovação para piloto controlado com dados reais
+- [x] Revisão de logs (sem dados sensíveis) — único ponto sensível encontrado foi `lib/messaging/providers/mock.ts` registrando telefone completo e conteúdo de parâmetros de template no console; mascarado e reduzido a contagem de parâmetros — ver DEC-036 em `docs/DECISIONS.md`
+- [x] Acessibilidade: labels, contraste, foco, ARIA, HTML semântico — contraste dos tokens `--status-warning/danger/info` corrigido (reprovavam WCAG AA), links secundários em telas de auth ajustados, `<select>`s sem rótulo associado em 3 painéis receberam `aria-label`; labels/foco dos formulários e primitivos de `components/ui/` já estavam corretos — ver DEC-036
+- [x] Responsividade a partir de 320px — corrigido overflow potencial do menu inferior do admin (5 itens, rótulo "Solicitações" sem ponto de quebra); grades de `StatTile` (`grid-cols-2`) confirmadas seguras por já usarem `minmax(0,1fr)` do Tailwind — ver DEC-036
+- [x] Performance: sem N+1, paginação, índices — duas consultas independentes paralelizadas em `/coordenacao` e em `/pessoas/[id]` (6 painéis, 11 consultas agora em um único `Promise.all`); paginação avaliada e adiada por julgamento (escala de piloto, ~30 pessoas por GR) — ver DEC-036; nova migration `20260708000001_performance_indexes.sql` cobre 12 colunas de chave estrangeira sem índice
+- [x] Build de produção sem erros — confirmado após as mudanças desta fase (`pnpm lint && pnpm typecheck && pnpm test && pnpm build`)
+- [ ] Deploy no Netlify (homologação) — hospedagem migrou de Vercel para Netlify (CLAUDE.md seção 2); o deploy de homologação em si já ocorreu fora deste repositório/sandbox, item mantido em aberto aqui apenas para refletir que a confirmação formal não foi feita nesta fase
+- [ ] Configuração de backups no Supabase — ação do responsável pela conta Supabase, não código; checklist em `docs/PILOTO_CHECKLIST.md`
+- [x] Documentação de treinamento para líderes — `docs/GUIA_DO_LIDER.md`
+- [x] Piloto com dados fictícios — já em vigor via `supabase/seed.sql` desde fases anteriores; nenhuma mudança necessária nesta fase
+- [ ] Aprovação para piloto controlado com dados reais — decisão do responsável pelo produto, condicionada às 5 exigências da CLAUDE.md seção 16; checklist em `docs/PILOTO_CHECKLIST.md`
 
 ---
 

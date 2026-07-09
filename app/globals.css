@@ -55,11 +55,15 @@
 
     /* ============================================================
        Status Tokens — usam cor + ícone, nunca só cor
+       Luminosidade ajustada (Fase 10) para atingir >=4.5:1 de contraste
+       de texto tanto sobre branco quanto sobre o próprio tom de fundo
+       (opacidades 10% e 15% usadas em badges e textos de aviso) —
+       valores anteriores de warning/danger/info reprovavam WCAG AA.
     ============================================================ */
     --status-success: 156 83% 23%;       /* verde HUIOS */
-    --status-warning: 38 92% 50%;        /* âmbar */
-    --status-danger: 0 84% 60%;          /* vermelho */
-    --status-info: 217 91% 60%;          /* azul */
+    --status-warning: 38 92% 27%;        /* âmbar */
+    --status-danger: 0 84% 40%;          /* vermelho */
+    --status-info: 217 91% 44%;          /* azul */
   }
 
   .dark {

@@ -66,7 +66,7 @@ export function LeaderSignupForm() {
       </div>
 
       <div className="border-t border-huios-cream/10 pt-5 space-y-5">
-        <p className="text-xs font-semibold uppercase tracking-wide text-huios-cream/40">Dados do GR</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-huios-cream/60">Dados do GR</p>
 
         <div className="space-y-2">
           <Label htmlFor="group_name" className="text-huios-cream/80">

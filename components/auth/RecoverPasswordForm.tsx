@@ -26,7 +26,7 @@ export function RecoverPasswordForm() {
         <p className="text-huios-cream/60 text-sm leading-relaxed">
           Verifique sua caixa de entrada e siga as instruções para redefinir a senha.
         </p>
-        <Link href="/login" className="block text-sm text-huios-cream/50 hover:text-huios-cream/80 transition-colors pt-2">
+        <Link href="/login" className="block text-sm text-huios-cream/70 hover:text-huios-cream/90 transition-colors pt-2">
           Voltar para o login
         </Link>
       </div>
@@ -62,7 +62,7 @@ export function RecoverPasswordForm() {
 
       <Link
         href="/login"
-        className="block text-center text-xs text-huios-cream/40 hover:text-huios-cream/70 transition-colors"
+        className="block text-center text-xs text-huios-cream/70 hover:text-huios-cream/90 transition-colors"
       >
         Voltar para o login
       </Link>

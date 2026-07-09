@@ -44,7 +44,7 @@ export function LoginForm() {
           </Label>
           <Link
             href="/recuperar-senha"
-            className="text-xs text-huios-cream/50 hover:text-huios-cream/80 transition-colors"
+            className="text-xs text-huios-cream/70 hover:text-huios-cream/90 transition-colors"
           >
             Esqueci a senha
           </Link>
