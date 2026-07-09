@@ -221,17 +221,19 @@ Entregas:
 
 ---
 
-### Fase 9 — Painéis
+### Fase 9 — Painéis ✅
 
 **Objetivo:** Dashboards com indicadores para líder e coordenação.
 
 Entregas:
-- [ ] Dashboard do líder (mobile-first, ações prioritárias)
-- [ ] Dashboard da coordenação (visão consolidada da rede)
-- [ ] Todos os 12 indicadores (pessoas, visitantes, presença, discipulado, formação, serviço, aptidão, pontualidade)
-- [ ] Relatórios atrasados
-- [ ] Casos escalados na visão da coordenação
+- [x] Dashboard do líder (mobile-first, ações prioritárias)
+- [x] Dashboard da coordenação (visão consolidada da rede)
+- [x] Todos os 12 indicadores (pessoas, visitantes, presença, discipulado, formação, serviço, aptidão, pontualidade)
+- [x] Relatórios atrasados
+- [x] Casos escalados na visão da coordenação
 - [ ] Filtros e busca consolidada
+
+**Resultado:** Fase 9 concluída, exceto filtros e busca consolidada (adiado — ver `docs/DECISIONS.md` DEC-034). Próximo: Fase 10 (Segurança e Piloto).
 
 ---
 

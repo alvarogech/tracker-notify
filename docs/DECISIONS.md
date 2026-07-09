@@ -177,6 +177,32 @@ Registro de decisões de arquitetura e produto. Atualizar sempre que uma decisã
 **Decisão:** Diferente de `service_assignments` (Fase 7), que não tem nenhum índice de unicidade sobre atribuições ativas, `group_cooperators` recebeu `UNIQUE (group_id, person_id) WHERE ended_at IS NULL`. A tabela também não tem coluna `updated_at`/trigger, ao contrário de `group_hosts` e `service_assignments` — cooperador é apenas inserido ou encerrado, nunca editado em outro campo.
 **Motivo:** A 5.8 não exige essa constraint explicitamente, mas sem ela seria possível a mesma pessoa acumular duas linhas "ativas" de cooperador redundantes no mesmo GR (ex.: duplo clique em "Marcar como cooperador"), o que não representa nenhum estado de negócio válido — diferente de `service_assignments`, onde a mesma pessoa pode legitimamente servir em duas áreas distintas ao mesmo tempo (a unicidade ali seria incorreta). `addCooperator` já checa a existência antes de inserir (idempotência na aplicação), e a constraint no banco fecha a mesma condição de corrida que a DEC-019 já resolveu para casos de pastoreio.
 
+### DEC-033 — Os 12 indicadores da Fase 9 e suas janelas de cálculo
+
+**Data:** 2026-07-09
+**Decisão:** `lib/business-rules/indicators.ts` centraliza o cálculo (taxas de cobertura genéricas, taxa de presença e seleção das reuniões mais recentes) usado pelo dashboard do líder (`app/(leader)/inicio/page.tsx`, escopado ao próprio GR) e pelo dashboard da coordenação (`app/(coordination)/coordenacao/page.tsx`, agregado à rede inteira — visível a `coordinator` e `admin`, não restrito a admin). Os 12 indicadores, cobrindo as 8 categorias citadas no roadmap, são:
+1. **Pessoas** — Membros ativos (contagem).
+2. **Pessoas** — Anfitrião definido no GR (líder: Sim/Não) / GRs sem anfitrião definido (coordenação: contagem), via `resolveActiveHost` (`group-roles.ts`).
+3. **Pessoas** — Cooperadores ativos (contagem), via `resolveActiveCooperators`.
+4. **Visitantes** — Visitantes ativos (contagem total da relação ativa; distinto do indicador de ação "aguardando vinculação", que usa o mesmo `shouldSuggestConversion` já usado no `/admin`).
+5. **Presença** — Taxa de presença nas últimas 6 reuniões com relatório enviado por GR (`selectRecentMeetings`/`selectRecentMeetingsPerGroup` + `computeAttendanceRate`, que exclui `on_leave` do denominador por força da regra 5.1).
+6. **Discipulado** — Cobertura de discipulado: % de membros ativos com `discipleship_assignments` ativo (via `computeCoverageRate`).
+7. **Formação** — % de membros ativos com Cultura Emaús concluída (registro declarativo em `training_records`).
+8. **Aptidão** — Aptos a servir, via `isEligibleToServe`.
+9. **Aptidão** — Atendem requisitos formativos para liderança, via `isEligibleToLeadFormatively` (rótulo evita "aprovado"/"pronto para liderar", seção 12).
+10. **Serviço** — % de membros ativos com `service_assignments` ativo.
+11. **Pontualidade** — % de relatórios enviados dentro do prazo de 48h nos últimos 30 dias (reaproveita `isReportWithinDeadline` passando `report_submitted_at` como "agora", em vez de duplicar a constante de 48h).
+12. **Pontualidade** — Relatórios com prazo encerrado e ainda não enviados (contagem; mesma métrica do "Relatórios atrasados" do roadmap, também exposta como item acionável no topo de cada painel).
+
+Além dos 12, o painel da coordenação expõe "Casos escalados" (contagem de `pastoral_cases` com `status = 'open' AND escalated_at IS NOT NULL`) — satisfaz o item de roadmap "Casos escalados na visão da coordenação" separadamente dos 12, já que casos não é uma das 8 categorias nomeadas.
+**Motivo:** O `/admin` (Fase 0/painel master) já mostra casos/visitantes/GRs/relatórios, mas é uma rota exclusiva de `admin` (`requireRole(['admin'])`) — a coordenação nunca teve acesso a essa página. Repetir os mesmos fatos operacionais em `/coordenacao` não é duplicação inútil: é a única forma de o papel `coordinator` efetivamente enxergar esses números, o que o próprio roadmap pede explicitamente ("Relatórios atrasados", "Casos escalados na visão da coordenação"). O foco de esforço novo desta fase, porém, foi discipulado/formação/serviço/aptidão/anfitrião/cooperador — indicadores que não existiam em nenhum painel anterior. Todas as taxas passam pelas mesmas funções puras testadas (`tests/unit/business-rules/indicators.test.ts`, 15 cenários), evitando duplicar a aritmética entre os dois painéis mesmo com consultas SQL necessariamente diferentes (uma escopada a um GR, outra à rede inteira).
+
+### DEC-034 — "Filtros e busca consolidada" adiado
+
+**Data:** 2026-07-09
+**Decisão:** O item de roadmap "Filtros e busca consolidada" da Fase 9 não foi implementado.
+**Motivo:** É uma peça de UI genuinamente separada (busca/filtro textual sobre GRs e pessoas na visão da coordenação) sem especificação de produto sobre quais campos, comportamento de filtro combinado ou onde deve viver na navegação — implementá-la por adivinhação arriscaria inventar comportamento de UX não pedido. Os dashboards desta fase já dão à coordenação visão consolidada por contagens/taxas; busca/filtro fica pendente de definição do responsável pelo produto, assim como os demais itens já registrados em "Decisões Pendentes" abaixo.
+
 ---
 
 ## Decisões Pendentes
@@ -185,4 +211,5 @@ Registro de decisões de arquitetura e produto. Atualizar sempre que uma decisã
 - Definir onde/como o sistema deve expor um fluxo de atribuição de "função de liderança" que consulte `isEligibleToLeadFormatively` — ver DEC-025.
 - Considerar um mecanismo de limitação de tentativas (rate limiting) em `/cadastro-lider` caso o código de convite vaze — hoje a única barreira além do código é a aprovação manual.
 - Criar infraestrutura de testes de RLS via SQL (`supabase/tests/`) — nenhuma fase até a 8 criou esse mecanismo; testes de acesso hoje dependem apenas da leitura manual das policies.
+- Definir campos/comportamento de "Filtros e busca consolidada" para a coordenação — ver DEC-034.
 
