@@ -41,6 +41,15 @@ for (const id of SEED_USER_IDS) {
   const { error } = await admin.auth.admin.updateUserById(id, { password })
   if (error) {
     console.error(`Falha ao redefinir senha de ${id}:`, error.message)
+    const { data: listData, error: listError } = await admin.auth.admin.listUsers()
+    if (listError) {
+      console.error('Falha também ao listar usuários via admin.listUsers():', listError.message)
+    } else {
+      console.error(
+        'Usuários visíveis via admin.listUsers():',
+        listData.users.map((u) => ({ id: u.id, email: u.email })),
+      )
+    }
     process.exit(1)
   }
 }
