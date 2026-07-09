@@ -181,6 +181,12 @@ Estas regras não podem ser modificadas sem aprovação explícita do responsáv
 - Presença posterior não resolve automaticamente um caso aberto
 - Não criar casos duplicados para a mesma sequência de ausências
 
+### 5.8 Papéis no GR: Anfitrião e Cooperador
+- **Anfitrião:** pessoa que recebe a reunião em sua casa. **1 anfitrião ativo por GR por vez** — mesmo padrão de substituição do discipulador (5.3): substituir encerra o vínculo anterior, histórico preservado.
+- **Cooperador:** pessoa que auxilia o líder na organização da reunião e no apascentamento. **Um GR pode ter vários cooperadores simultâneos.** É um cargo fixo no GR (não varia por reunião) — permanece até ser encerrado explicitamente.
+- Anfitrião e cooperador são papéis dentro do GR, independentes do tipo de vínculo (membro/visitante); apenas membros ativos do GR podem ser anfitrião ou cooperador.
+- Não é caso de pastoreio, discipulado ou formação — é dado puramente operacional/organizacional.
+
 ---
 
 ## 6. Regras de Segurança
