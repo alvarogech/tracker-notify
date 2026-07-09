@@ -1,0 +1,31 @@
+name: Backup do banco Supabase
+
+on:
+  schedule:
+    # 06:00 UTC = 03:00 America/Sao_Paulo
+    - cron: '0 6 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    container:
+      image: postgres:15
+    steps:
+      - name: Rodar pg_dump
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "SUPABASE_DB_URL não configurado nos secrets do repositório." >&2
+            exit 1
+          fi
+          mkdir -p backup
+          pg_dump "$SUPABASE_DB_URL" -F c -f backup/pastoreio-huios-$(date +%Y-%m-%d).dump
+
+      - name: Publicar backup como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-backup-${{ github.run_id }}
+          path: backup/*.dump
+          retention-days: 30

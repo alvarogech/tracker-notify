@@ -4,14 +4,28 @@ Este checklist cobre os itens da Fase 10 (`docs/ROADMAP.md`) que **não são có
 
 ---
 
-## 1. Configurar backups automáticos no Supabase
+## 1. Backups automáticos
 
 O ambiente de produção do piloto precisa de backups configurados antes de qualquer dado real de membro ser inserido (ver seção 3 abaixo).
 
+### Opção A — Supabase nativo (pago)
+
 - No dashboard do projeto Supabase de produção: **Settings → Database → Backups**.
-- Em planos pagos do Supabase, backups diários automáticos (e, dependendo do plano, Point-in-Time Recovery) já vêm habilitados ou podem ser habilitados nessa tela.
-- No plano gratuito, a retenção e a recuperação pontual (PITR) são limitadas ou indisponíveis — **confirme o plano contratado no dashboard antes de assumir que o backup automático está ativo**; não presuma, verifique diretamente na tela de Backups do projeto usado em produção.
-- Ação: registrar aqui (ou em `docs/DECISIONS.md`) qual plano está em uso e qual é a política de retenção confirmada na tela do Supabase, para que a equipe saiba com que frequência e por quanto tempo os dados podem ser restaurados.
+- Em planos pagos (Pro, US$25/mês), backups diários automáticos com 7 dias de retenção já vêm habilitados; Point-in-Time Recovery é um add-on separado.
+- No plano gratuito, não há backup automático nem PITR — **confirme o plano contratado no dashboard antes de assumir que o backup automático está ativo**.
+
+### Opção B — GitHub Actions gratuito (já configurado neste repositório)
+
+`.github/workflows/supabase-backup.yml` roda `pg_dump` todo dia às 03:00 (horário de Brasília) e publica o dump como artifact do GitHub Actions (retenção de 30 dias), sem custo adicional. Para ativar:
+
+1. No Supabase: **Settings → Database → Connection string**, formato **URI**, copiar a connection string completa (com a senha do banco).
+2. No GitHub: **Settings → Secrets and variables → Actions → New repository secret**, nome `SUPABASE_DB_URL`, colar a connection string.
+3. Disparar manualmente uma vez em **Actions → Backup do banco Supabase → Run workflow** para confirmar que funciona antes de depender do agendamento automático.
+4. Para restaurar um backup: baixar o artifact `.dump` e rodar `pg_restore --clean --if-exists -d "<connection-string-do-destino>" arquivo.dump`.
+
+Nenhuma das duas opções é mutuamente exclusiva — dá pra usar a B agora (grátis) e migrar pra A se/quando o plano pago for contratado.
+
+- Ação: registrar aqui (ou em `docs/DECISIONS.md`) qual opção está ativa, e confirmar que o primeiro backup rodou com sucesso antes de considerar este item concluído.
 
 ---
 

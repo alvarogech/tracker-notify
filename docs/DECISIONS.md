@@ -251,6 +251,12 @@ Além dos 12, o painel da coordenação expõe "Casos escalados" (contagem de `p
 
 **Motivo geral:** esta é a segunda metade da Fase 10 (Segurança e Piloto) — hardening (logs, acessibilidade, responsividade, performance/índices) mais documentação, sem alterar regra de negócio, Server Action ou política de RLS existente. Todas as mudanças de UI foram limitadas a correções de defeito concreto e mensurável (contraste medido, rótulo ausente, overflow por cálculo de largura), não reescrita de estilo; cada componente alterado foi checado quanto a outros usos antes da mudança (grep de consumidores) para não quebrar props/comportamento existente.
 
+### DEC-037 — Backup gratuito via GitHub Actions como alternativa ao Supabase Pro
+
+**Data:** 2026-07-09
+**Decisão:** `.github/workflows/supabase-backup.yml` roda `pg_dump -F c` diariamente (03:00 America/Sao_Paulo, mais disparo manual via `workflow_dispatch`) contra o banco de produção usando a connection string em `secrets.SUPABASE_DB_URL`, publicando o dump como artifact do GitHub Actions com retenção de 30 dias. Documentado em `docs/PILOTO_CHECKLIST.md` como "Opção B", alternativa ao backup nativo pago do Supabase (plano Pro, US$25/mês).
+**Motivo:** O responsável pelo produto decidiu liberar o cadastro de dados reais para os líderes e pediu uma forma de backup sem custo. O plano gratuito do Supabase não inclui backup automático nem PITR. `pg_dump` agendado via GitHub Actions cobre a exigência da seção 16 do CLAUDE.md ("backups estejam configurados") sem depender de upgrade de plano, usando apenas infraestrutura já gratuita (Actions em repositório privado). Não é um substituto de Point-in-Time Recovery — é um snapshot diário completo, suficiente para o estágio de piloto. Requer que o responsável pelo produto configure o secret `SUPABASE_DB_URL` e dispare uma execução manual de teste antes de contar com o agendamento automático.
+
 ---
 
 ## Decisões Pendentes
