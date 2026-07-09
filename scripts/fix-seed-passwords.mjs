@@ -7,8 +7,15 @@
 // garantido compatível), em vez de confiar no INSERT bruto em auth.users.
 import { createClient } from '@supabase/supabase-js'
 
-const url = process.env.API_URL
-const serviceRoleKey = process.env.SERVICE_ROLE_KEY
+// `supabase status -o env >> "$GITHUB_ENV"` grava valores entre aspas
+// literais (ex: API_URL="http://..."); GITHUB_ENV não remove aspas como o
+// parser do dotenv faz para .env.local, então process.env preserva as aspas.
+function stripQuotes(value) {
+  return (value ?? '').replace(/^"(.*)"$/, '$1')
+}
+
+const url = stripQuotes(process.env.API_URL)
+const serviceRoleKey = stripQuotes(process.env.SERVICE_ROLE_KEY)
 const password = 'Huios@2026'
 
 if (!url || !serviceRoleKey) {

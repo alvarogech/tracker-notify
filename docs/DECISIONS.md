@@ -281,6 +281,12 @@ Além dos 12, o painel da coordenação expõe "Casos escalados" (contagem de `p
 **Decisão:** (1) `.github/workflows/tests.yml` agora instala `chromium webkit` (antes só `chromium`) — o projeto Playwright "Mobile Safari" usa o motor WebKit, que nunca tinha sido baixado, fazendo toda a suíte falhar rapidamente com "Executable doesn't exist" e, combinado com `retries: 2` do `playwright.config.ts`, inflando o tempo total do job. (2) Novo `scripts/fix-seed-passwords.mjs`, rodado logo após capturar as variáveis do Supabase local e antes dos testes E2E, redefine a senha de cada usuário semeado via `auth.admin.updateUserById()` (API do GoTrue), em vez de confiar no hash inserido por `crypt(senha, gen_salt('bf'))` direto em `auth.users` via SQL em `supabase/seed.sql`. Também adicionado `timeout-minutes: 15` ao job como rede de segurança.
 **Motivo:** A terceira execução real do workflow (após a DEC-040 corrigir os testes de RLS, que passaram 8/8) revelou que **todo** cenário E2E que dependia de login efetivamente funcionar falhava com `E-mail ou senha incorretos` — exatamente o mesmo sintoma que o responsável pelo produto teve que corrigir manualmente no Supabase Cloud mais cedo nesta sessão (rodando `UPDATE auth.users SET encrypted_password = crypt(...)` na mão). O hash gerado por `crypt()` em SQL funciona no Postgres do Supabase Cloud mas nem sempre é aceito pela verificação do GoTrue no Postgres local iniciado por `supabase start` — a causa exata (versão do pgcrypto, formato do hash) não foi confirmada, mas o sintoma e a correção são idênticos aos já observados em produção. Usar a API admin do GoTrue para definir a senha, em vez de inserir o hash via SQL, garante que o próprio GoTrue faça o hashing, eliminando essa incompatibilidade em qualquer ambiente — não altera `supabase/seed.sql` (que já funciona em produção) para não arriscar regressão no caminho que já é usado no piloto real.
 
+### DEC-042 — Aspas literais do `$GITHUB_ENV` quebravam `createClient()` no script de senha
+
+**Data:** 2026-07-09
+**Decisão:** `scripts/fix-seed-passwords.mjs` agora passa `process.env.API_URL` e `process.env.SERVICE_ROLE_KEY` por uma função `stripQuotes()` (`.replace(/^"(.*)"$/, '$1')`) antes de repassá-los a `createClient()`.
+**Motivo:** A quarta execução real do workflow (após a DEC-041 corrigir WebKit e senhas) falhou numa etapa nova: `node scripts/fix-seed-passwords.mjs` lançava `Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL`. Causa: `pnpm exec supabase status -o env >> "$GITHUB_ENV"` escreve linhas como `API_URL="http://127.0.0.1:54321"`, com aspas duplas fazendo parte literal do valor. O mecanismo `$GITHUB_ENV` do GitHub Actions não remove essas aspas (ao contrário do parser de `.env.local` usado pelo Next.js, que por coincidência já tolerava o mesmo formato antes, no heredoc que escreve `.env.local`). O script recebia a string `"http://127.0.0.1:54321"` com as aspas incluídas, que falhava na validação de esquema HTTP/HTTPS da biblioteca `@supabase/supabase-js`.
+
 ---
 
 ## Decisões Pendentes
@@ -288,7 +294,7 @@ Além dos 12, o painel da coordenação expõe "Casos escalados" (contagem de `p
 - Definir mecanismo de notificações internas para casos de pastoreio (criado, escalado) — ver DEC-021.
 - Definir onde/como o sistema deve expor um fluxo de atribuição de "função de liderança" que consulte `isEligibleToLeadFormatively` — ver DEC-025.
 - Considerar um mecanismo de limitação de tentativas (rate limiting) em `/cadastro-lider` caso o código de convite vaze — hoje a única barreira além do código é a aprovação manual.
-- Disparar `.github/workflows/tests.yml` novamente após a DEC-041 e confirmar resultado verde (RLS e E2E) antes de aprovar dados reais.
+- Disparar `.github/workflows/tests.yml` novamente após a DEC-042 e confirmar resultado verde (RLS e E2E) antes de aprovar dados reais.
 - Investigar a causa exata da incompatibilidade de hash do `crypt()` entre o Postgres do Supabase Cloud e o Postgres local do `supabase start` (DEC-041) — hoje contornada, não explicada.
 - Definir campos/comportamento de "Filtros e busca consolidada" para a coordenação — ver DEC-034.
 
