@@ -269,6 +269,12 @@ Além dos 12, o painel da coordenação expõe "Casos escalados" (contagem de `p
 **Decisão:** `supabase/migrations/20260709000001_grants.sql` concede explicitamente `SELECT` a `anon` e `SELECT/INSERT/UPDATE/DELETE` a `authenticated` em todas as tabelas do schema `public`, mais `ALTER DEFAULT PRIVILEGES` equivalente para tabelas futuras.
 **Motivo:** A primeira execução real do `.github/workflows/tests.yml` (DEC-038) revelou que as 8 suítes pgTAP falhavam inteiramente com `permission denied for table profiles` (SQLSTATE 42501) — um erro de **GRANT ausente**, não de RLS. RLS restringe quais linhas uma role vê, mas o Postgres exige o GRANT de tabela antes mesmo de avaliar qualquer policy. Nenhuma migration deste projeto jamais concedeu esses privilégios explicitamente porque o Supabase Cloud já faz isso automaticamente no provisionamento do projeto (por isso o app sempre funcionou normalmente em produção, apesar de essa lacuna existir desde a Fase 1) — mas o Postgres local iniciado por `supabase start` no runner do GitHub Actions não herda esse bootstrap implícito. Esta migration tem efeito nulo em produção (privilégio já concedido) e corrige o ambiente de CI/local, tornando as migrations autossuficientes em qualquer Postgres, não apenas no provisionado pelo Supabase.
 
+### DEC-040 — Correção de `throws_ok()` de 3 argumentos nos testes de RLS
+
+**Data:** 2026-07-09
+**Decisão:** As seis chamadas `throws_ok(sql, '42501', 'descrição em português')` em `02_leader_isolation.test.sql` e `04_anon_denied.test.sql` foram trocadas para a forma de dois argumentos `throws_ok(sql, '42501')`, movendo a descrição em português para um comentário SQL acima de cada chamada.
+**Motivo:** A segunda execução real do `.github/workflows/tests.yml` (após a DEC-039 corrigir o GRANT) mostrou 8/8 arquivos rodando, mas 6 subtestes falhando por um motivo diferente: a documentação oficial do pgTAP especifica que, na forma de três argumentos, se o segundo argumento tiver exatamente 5 bytes (como `'42501'`), ele é tratado como código SQLSTATE e **o terceiro argumento passa a ser a mensagem de erro esperada, não uma descrição** — nossas chamadas comparavam a mensagem literal do Postgres (ex: `new row violates row-level security policy for table "pastoral_cases"`) contra o texto em português que tínhamos escrito como descrição, o que nunca poderia bater. A RLS em si estava correta o tempo todo (SQLSTATE 42501 era lançado como esperado); o defeito era só na chamada de asserção do teste.
+
 ---
 
 ## Decisões Pendentes
@@ -276,6 +282,6 @@ Além dos 12, o painel da coordenação expõe "Casos escalados" (contagem de `p
 - Definir mecanismo de notificações internas para casos de pastoreio (criado, escalado) — ver DEC-021.
 - Definir onde/como o sistema deve expor um fluxo de atribuição de "função de liderança" que consulte `isEligibleToLeadFormatively` — ver DEC-025.
 - Considerar um mecanismo de limitação de tentativas (rate limiting) em `/cadastro-lider` caso o código de convite vaze — hoje a única barreira além do código é a aprovação manual.
-- Disparar `.github/workflows/tests.yml` novamente após a DEC-039 e confirmar resultado verde antes de aprovar dados reais.
+- Disparar `.github/workflows/tests.yml` novamente após a DEC-040 e confirmar resultado verde (RLS e E2E) antes de aprovar dados reais.
 - Definir campos/comportamento de "Filtros e busca consolidada" para a coordenação — ver DEC-034.
 

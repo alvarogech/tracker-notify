@@ -41,20 +41,20 @@ SELECT is(
   'anônimo não enxerga nenhuma linha de groups'
 );
 
+-- anônimo não pode inserir em people
 SELECT throws_ok(
   $$ INSERT INTO people (full_name) VALUES ('Pessoa Anônima Teste') $$,
-  '42501',
-  'anônimo não pode inserir em people'
+  '42501'
 );
 
+-- anônimo não pode inserir em pastoral_cases
 SELECT throws_ok(
   $$ INSERT INTO pastoral_cases (person_id, group_id, status, created_by)
      VALUES ('30000000-0000-0000-0000-000000000001',
              '20000000-0000-0000-0000-000000000001',
              'open',
              NULL) $$,
-  '42501',
-  'anônimo não pode inserir em pastoral_cases'
+  '42501'
 );
 
 SELECT * FROM finish();

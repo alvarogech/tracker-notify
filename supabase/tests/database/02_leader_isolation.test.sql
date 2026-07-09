@@ -72,24 +72,24 @@ SELECT is(
 -- Cenário 3: líder não pode criar/atualizar registro de pessoa de outro GR
 -- (isolamento vale também para INSERT/UPDATE, não só para SELECT)
 -- ============================================================
+-- líder do GR Sul não pode abrir caso de pastoreio para pessoa do GR Norte
 SELECT throws_ok(
   $$ INSERT INTO pastoral_cases (person_id, group_id, status, created_by)
      VALUES ('30000000-0000-0000-0000-000000000001',
              '20000000-0000-0000-0000-000000000001',
              'open',
              '00000000-0000-0000-0000-000000000004') $$,
-  '42501',
-  'líder do GR Sul não pode abrir caso de pastoreio para pessoa do GR Norte'
+  '42501'
 );
 
+-- líder do GR Sul não pode atribuir discipulador a pessoa do GR Norte
 SELECT throws_ok(
   $$ INSERT INTO discipleship_assignments (person_id, discipler_id, group_id, created_by)
      VALUES ('30000000-0000-0000-0000-000000000001',
              '00000000-0000-0000-0000-000000000004',
              '20000000-0000-0000-0000-000000000001',
              '00000000-0000-0000-0000-000000000004') $$,
-  '42501',
-  'líder do GR Sul não pode atribuir discipulador a pessoa do GR Norte'
+  '42501'
 );
 
 SELECT is(
@@ -106,22 +106,22 @@ SELECT is(
 -- só grava nessas tabelas via service_role nos Server Actions, mas a
 -- camada de RLS precisa negar por si só caso alguém contorne a aplicação)
 -- ============================================================
+-- líder não pode inserir em group_transfers diretamente via RLS
 SELECT throws_ok(
   $$ INSERT INTO group_transfers (person_id, from_group_id, to_group_id, transferred_by)
      VALUES ('30000000-0000-0000-0000-000000000001',
              '20000000-0000-0000-0000-000000000001',
              '20000000-0000-0000-0000-000000000002',
              '00000000-0000-0000-0000-000000000004') $$,
-  '42501',
-  'líder não pode inserir em group_transfers diretamente via RLS'
+  '42501'
 );
 
+-- líder não pode inserir em audit_logs diretamente via RLS
 SELECT throws_ok(
   $$ INSERT INTO audit_logs (actor_id, action, entity_type, entity_id)
      VALUES ('00000000-0000-0000-0000-000000000004', 'test', 'people',
              '30000000-0000-0000-0000-000000000001') $$,
-  '42501',
-  'líder não pode inserir em audit_logs diretamente via RLS'
+  '42501'
 );
 
 SELECT * FROM finish();
