@@ -6,15 +6,26 @@
 -- Usuários de autenticação (inseridos via auth.users)
 -- ============================================================
 -- Senha padrão de todos os usuários de seed: Huios@2026
-INSERT INTO auth.users (id, email, encrypted_password, email_confirmed_at, created_at, updated_at, raw_app_meta_data, raw_user_meta_data)
+--
+-- instance_id e as colunas de token (confirmation_token, recovery_token etc.)
+-- são preenchidos explicitamente porque a API admin do GoTrue filtra por
+-- instance_id e falha ao escanear NULL nessas colunas de texto — sem isso,
+-- os usuários existem em auth.users mas ficam invisíveis para
+-- admin.listUsers()/updateUserById() (ver docs/DECISIONS.md DEC-043).
+INSERT INTO auth.users (
+  instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+  created_at, updated_at, raw_app_meta_data, raw_user_meta_data,
+  confirmation_token, recovery_token, email_change_token_new, email_change,
+  email_change_token_current, phone_change, phone_change_token, reauthentication_token
+)
 VALUES
-  ('00000000-0000-0000-0000-000000000001', 'admin@huios.dev',       crypt('Huios@2026', gen_salt('bf')), now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}'),
-  ('00000000-0000-0000-0000-000000000002', 'coord@huios.dev',       crypt('Huios@2026', gen_salt('bf')), now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}'),
-  ('00000000-0000-0000-0000-000000000003', 'lider.norte@huios.dev', crypt('Huios@2026', gen_salt('bf')), now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}'),
-  ('00000000-0000-0000-0000-000000000004', 'lider.sul@huios.dev',   crypt('Huios@2026', gen_salt('bf')), now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}'),
-  ('00000000-0000-0000-0000-000000000005', 'lider.leste@huios.dev', crypt('Huios@2026', gen_salt('bf')), now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}'),
-  ('00000000-0000-0000-0000-000000000006', 'lider.oeste@huios.dev', crypt('Huios@2026', gen_salt('bf')), now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}'),
-  ('00000000-0000-0000-0000-000000000007', 'lider.centro@huios.dev',crypt('Huios@2026', gen_salt('bf')), now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}');
+  ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'admin@huios.dev',       crypt('Huios@2026', gen_salt('bf')), now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}', '', '', '', '', '', '', '', ''),
+  ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'coord@huios.dev',       crypt('Huios@2026', gen_salt('bf')), now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}', '', '', '', '', '', '', '', ''),
+  ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000003', 'authenticated', 'authenticated', 'lider.norte@huios.dev', crypt('Huios@2026', gen_salt('bf')), now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}', '', '', '', '', '', '', '', ''),
+  ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000004', 'authenticated', 'authenticated', 'lider.sul@huios.dev',   crypt('Huios@2026', gen_salt('bf')), now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}', '', '', '', '', '', '', '', ''),
+  ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000005', 'authenticated', 'authenticated', 'lider.leste@huios.dev', crypt('Huios@2026', gen_salt('bf')), now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}', '', '', '', '', '', '', '', ''),
+  ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000006', 'authenticated', 'authenticated', 'lider.oeste@huios.dev', crypt('Huios@2026', gen_salt('bf')), now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}', '', '', '', '', '', '', '', ''),
+  ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000007', 'authenticated', 'authenticated', 'lider.centro@huios.dev',crypt('Huios@2026', gen_salt('bf')), now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}', '', '', '', '', '', '', '', '');
 
 -- ============================================================
 -- Perfis

@@ -287,6 +287,12 @@ Além dos 12, o painel da coordenação expõe "Casos escalados" (contagem de `p
 **Decisão:** `scripts/fix-seed-passwords.mjs` agora passa `process.env.API_URL` e `process.env.SERVICE_ROLE_KEY` por uma função `stripQuotes()` (`.replace(/^"(.*)"$/, '$1')`) antes de repassá-los a `createClient()`.
 **Motivo:** A quarta execução real do workflow (após a DEC-041 corrigir WebKit e senhas) falhou numa etapa nova: `node scripts/fix-seed-passwords.mjs` lançava `Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL`. Causa: `pnpm exec supabase status -o env >> "$GITHUB_ENV"` escreve linhas como `API_URL="http://127.0.0.1:54321"`, com aspas duplas fazendo parte literal do valor. O mecanismo `$GITHUB_ENV` do GitHub Actions não remove essas aspas (ao contrário do parser de `.env.local` usado pelo Next.js, que por coincidência já tolerava o mesmo formato antes, no heredoc que escreve `.env.local`). O script recebia a string `"http://127.0.0.1:54321"` com as aspas incluídas, que falhava na validação de esquema HTTP/HTTPS da biblioteca `@supabase/supabase-js`.
 
+### DEC-043 — `instance_id` e colunas de token ausentes tornavam usuários semeados invisíveis à API admin do GoTrue
+
+**Data:** 2026-07-09
+**Decisão:** `supabase/seed.sql` agora insere `auth.users` especificando explicitamente `instance_id = '00000000-0000-0000-0000-000000000000'`, `aud = 'authenticated'`, `role = 'authenticated'` e todas as colunas de token (`confirmation_token`, `recovery_token`, `email_change_token_new`, `email_change`, `email_change_token_current`, `phone_change`, `phone_change_token`, `reauthentication_token`) como string vazia `''`, em vez de deixá-las no valor padrão da coluna. Removida a etapa temporária de diagnóstico `[Diagnóstico temporário] Inspecionar auth.users` do workflow.
+**Motivo:** A quinta execução real do workflow (após a DEC-042 corrigir a URL) trocou o erro `Invalid supabaseUrl` por `User not found` em `updateUserById()`, e `admin.listUsers()` retornava `[]` — nenhum usuário visível para a API admin do GoTrue, mesmo a etapa de seed tendo rodado sem erro e os 7 registros existindo em `auth.users` (confirmado via `SELECT` direto por `psql` numa etapa de diagnóstico temporária). A API admin do GoTrue filtra internamente por `instance_id`; como o INSERT original de `supabase/seed.sql` não especificava essa coluna, ela ficava com seu valor padrão (não necessariamente o UUID zerado que o GoTrue local usa como instância corrente), fazendo toda consulta administrativa por `id` ou listagem não encontrar nenhuma linha — mesmo com os dados presentes e corretos na tabela. Preencher `instance_id`/`aud`/`role`/tokens explicitamente é a prática documentada da comunidade Supabase para seeds manuais de `auth.users` e não muda nenhum comportamento já em produção (só adiciona valores explícitos onde antes havia o padrão da coluna).
+
 ---
 
 ## Decisões Pendentes
@@ -294,7 +300,7 @@ Além dos 12, o painel da coordenação expõe "Casos escalados" (contagem de `p
 - Definir mecanismo de notificações internas para casos de pastoreio (criado, escalado) — ver DEC-021.
 - Definir onde/como o sistema deve expor um fluxo de atribuição de "função de liderança" que consulte `isEligibleToLeadFormatively` — ver DEC-025.
 - Considerar um mecanismo de limitação de tentativas (rate limiting) em `/cadastro-lider` caso o código de convite vaze — hoje a única barreira além do código é a aprovação manual.
-- Disparar `.github/workflows/tests.yml` novamente após a DEC-042 e confirmar resultado verde (RLS e E2E) antes de aprovar dados reais.
+- Disparar `.github/workflows/tests.yml` novamente após a DEC-043 e confirmar resultado verde (RLS e E2E) antes de aprovar dados reais.
 - Investigar a causa exata da incompatibilidade de hash do `crypt()` entre o Postgres do Supabase Cloud e o Postgres local do `supabase start` (DEC-041) — hoje contornada, não explicada.
 - Definir campos/comportamento de "Filtros e busca consolidada" para a coordenação — ver DEC-034.
 
