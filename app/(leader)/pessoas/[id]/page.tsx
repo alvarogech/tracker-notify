@@ -15,6 +15,8 @@ import { DisciplershipPanel } from '@/components/discipleship/DisciplershipPanel
 import { TrainingPanel } from '@/components/training/TrainingPanel'
 import { ServiceAssignmentsPanel } from '@/components/service/ServiceAssignmentsPanel'
 import { TransferPersonPanel } from '@/components/groups/TransferPersonPanel'
+import { HostPanel } from '@/components/groups/HostPanel'
+import { CooperatorsPanel } from '@/components/groups/CooperatorsPanel'
 
 export const metadata: Metadata = { title: 'Perfil da pessoa' }
 
@@ -74,6 +76,20 @@ interface ServiceAssignmentRow {
   started_at: string
   ended_at: string | null
   ministry_area: { id: string; name: string } | null
+}
+
+interface GroupHostRow {
+  id: string
+  person_id: string
+  started_at: string
+  ended_at: string | null
+  host: { id: string; full_name: string } | null
+}
+
+interface GroupCooperatorRow {
+  id: string
+  started_at: string
+  ended_at: string | null
 }
 
 export default async function PersonPage({ params }: { params: { id: string } }) {
@@ -197,6 +213,47 @@ export default async function PersonPage({ params }: { params: { id: string } })
     .filter((area) => !activeServiceAreaIds.has(area.id))
     .map((area) => ({ id: area.id, name: area.name }))
 
+  let activeHost: { id: string; personId: string; personName: string; startedAt: string } | null = null
+  let isCurrentHost = false
+  let isActiveCooperatorRole = false
+  let activeCooperatorAssignmentId: string | null = null
+  let activeCooperatorStartedAt: string | null = null
+
+  if (rel.type === 'member' && rel.group) {
+    const { data: hostData } = await supabase
+      .from('group_hosts')
+      .select('id, person_id, started_at, host:people(id, full_name)')
+      .eq('group_id', rel.group.id)
+      .is('ended_at', null)
+      .maybeSingle()
+
+    const hostRow = hostData as unknown as GroupHostRow | null
+    if (hostRow) {
+      activeHost = {
+        id: hostRow.id,
+        personId: hostRow.person_id,
+        personName: hostRow.host?.full_name ?? 'Pessoa removida',
+        startedAt: hostRow.started_at,
+      }
+      isCurrentHost = hostRow.person_id === person.id
+    }
+
+    const { data: cooperatorData } = await supabase
+      .from('group_cooperators')
+      .select('id, started_at, ended_at')
+      .eq('person_id', person.id)
+      .eq('group_id', rel.group.id)
+      .is('ended_at', null)
+      .maybeSingle()
+
+    const cooperatorRow = cooperatorData as unknown as GroupCooperatorRow | null
+    if (cooperatorRow) {
+      isActiveCooperatorRole = true
+      activeCooperatorAssignmentId = cooperatorRow.id
+      activeCooperatorStartedAt = cooperatorRow.started_at
+    }
+  }
+
   const canTransfer = profile.role === 'coordinator' || profile.role === 'admin'
   let transferGroupOptions: { id: string; name: string }[] = []
   if (canTransfer && rel.type === 'member') {
@@ -302,6 +359,27 @@ export default async function PersonPage({ params }: { params: { id: string } })
           currentGroupName={rel.group.name}
           groupOptions={transferGroupOptions}
           activeDisciplerName={activeAssignment?.disciplerName ?? null}
+        />
+      )}
+
+      {rel.type === 'member' && rel.group && (
+        <HostPanel
+          personId={person.id}
+          groupId={rel.group.id}
+          isCurrentHost={isCurrentHost}
+          activeHostAssignmentId={isCurrentHost ? activeHost?.id ?? null : null}
+          activeHostName={activeHost?.personName ?? null}
+          activeHostStartedAt={activeHost?.startedAt ?? null}
+        />
+      )}
+
+      {rel.type === 'member' && rel.group && (
+        <CooperatorsPanel
+          personId={person.id}
+          groupId={rel.group.id}
+          isActiveCooperator={isActiveCooperatorRole}
+          activeCooperatorAssignmentId={activeCooperatorAssignmentId}
+          activeCooperatorStartedAt={activeCooperatorStartedAt}
         />
       )}
 

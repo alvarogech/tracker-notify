@@ -347,3 +347,34 @@ INSERT INTO service_assignments (person_id, ministry_area_id, group_id, started_
 SELECT '30000000-0000-0000-0000-000000000001', ma.id, '20000000-0000-0000-0000-000000000001',
        now() - interval '15 days', '00000000-0000-0000-0000-000000000003'
 FROM ministry_areas ma WHERE ma.name = 'Mídia e Som';
+
+-- ============================================================
+-- Papéis no GR — Anfitrião e Cooperador — GR Norte (5.8)
+-- Demonstra o anfitrião ativo único do GR e dois cooperadores ativos
+-- simultâneos, todos membros ativos do GR Norte
+-- ============================================================
+
+-- Diego Martins (005): anfitrião ativo do GR Norte
+INSERT INTO group_hosts (id, person_id, group_id, started_at, created_by, created_at) VALUES
+  ('90000000-0000-0000-0000-000000000001',
+   '30000000-0000-0000-0000-000000000005',
+   '20000000-0000-0000-0000-000000000001',
+   now() - interval '45 days',
+   '00000000-0000-0000-0000-000000000003',
+   now() - interval '45 days');
+
+-- Tatiane Rocha (002) e Bruno Lima (003): cooperadores ativos simultâneos
+-- do GR Norte — demonstra que vários cooperadores podem coexistir (5.8)
+INSERT INTO group_cooperators (id, person_id, group_id, started_at, created_by, created_at) VALUES
+  ('90000000-0000-0000-0000-000000000002',
+   '30000000-0000-0000-0000-000000000002',
+   '20000000-0000-0000-0000-000000000001',
+   now() - interval '40 days',
+   '00000000-0000-0000-0000-000000000003',
+   now() - interval '40 days'),
+  ('90000000-0000-0000-0000-000000000003',
+   '30000000-0000-0000-0000-000000000003',
+   '20000000-0000-0000-0000-000000000001',
+   now() - interval '25 days',
+   '00000000-0000-0000-0000-000000000003',
+   now() - interval '25 days');

@@ -202,6 +202,25 @@ Entregas:
 
 ---
 
+### Papéis no GR — Anfitrião e Cooperador ✅
+
+**Objetivo:** Registrar os papéis operacionais de anfitrião (1 ativo por GR) e cooperador (vários ativos por GR), conforme CLAUDE.md 5.8 (regra adicionada diretamente pelo responsável pelo produto, fora da numeração original das fases).
+
+Entregas:
+- [x] Migration: `group_hosts`, `group_cooperators`
+- [x] Regra pura de resolução de anfitrião ativo e cooperadores ativos (`lib/business-rules/group-roles.ts`)
+- [x] Definição e substituição de anfitrião (1 ativo por GR)
+- [x] Encerramento de vínculo de anfitrião
+- [x] Adição e remoção de cooperador (múltiplos simultâneos por GR)
+- [x] RLS: líder escopado ao próprio GR, coordenação/admin livres
+- [x] Painel no perfil da pessoa, visível a líder (do próprio GR)/coordenação/admin
+- [x] Seed de exemplo no GR Norte (1 anfitrião ativo, 2 cooperadores ativos)
+- [x] Testes unitários (9 cenários)
+
+**Resultado:** Concluído. Ver `docs/DECISIONS.md` DEC-031 e DEC-032. Pré-requisito de dados para a Fase 9 (Painéis), que ainda não foi iniciada.
+
+---
+
 ### Fase 9 — Painéis
 
 **Objetivo:** Dashboards com indicadores para líder e coordenação.

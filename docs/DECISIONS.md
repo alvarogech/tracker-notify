@@ -165,6 +165,18 @@ Registro de decisões de arquitetura e produto. Atualizar sempre que uma decisã
 **Decisão:** Não foi criado `lib/business-rules/transfers.ts`. As únicas decisões da transferência além da orquestração de banco são checagens triviais de existência/igualdade (GR de destino diferente do atual; pessoa é membro ativo; há atribuição de discipulado ativa) já expressas como guards simples no Server Action, e a decisão "oferecer manter/encerrar discipulador" na UI reaproveita o mesmo `activeAssignment` que a página da pessoa já calcula (mesmo padrão `.find(a => a.endedAt === null)` consagrado por `resolveActiveAssignment`, `lib/business-rules/discipleship.ts`, Fase 6) — sem reintroduzir a checagem.
 **Motivo:** Mesmo julgamento da DEC-025: criar um módulo de regra pura só para encapsular comparações triviais (`===`) seria forçar uma abstração sem lógica de negócio genuína por trás, e duplicaria uma checagem de discipulador ativo que já existe e já é testada desde a Fase 6.
 
+### DEC-031 — Índice único de anfitrião escopado por GR, não por pessoa (inverso do discipulado)
+
+**Data:** 2026-07-09
+**Decisão:** `group_hosts` usa `UNIQUE (group_id) WHERE ended_at IS NULL`, ao contrário de `discipleship_assignments`, que usa `UNIQUE (person_id) WHERE ended_at IS NULL`. A regra 5.8 diz "1 anfitrião ativo por GR por vez" — quem tem no máximo um vínculo ativo é o **grupo**, não a pessoa. Uma mesma pessoa poderia, em tese, ser anfitriã de mais de um GR ao mesmo tempo sem violar a 5.8 (o sistema não proíbe isso explicitamente), mas o Server Action `assignHost` já impede esse cenário na prática, pois só permite definir como anfitrião uma pessoa que seja membro ativo do próprio GR — e uma pessoa só tem uma relação de GR ativa por vez (regra implícita já usada por `getActiveGroupForPerson` desde a Fase 6).
+**Motivo:** Modelar a constraint no sentido oposto ao de `discipleship_assignments` evita o erro de copiar o índice de discipulado sem adaptar ao sujeito correto da regra ("por GR", não "por pessoa"). Colocar a constraint no banco (não apenas checagem de aplicação) torna a regra estrutural, seguindo o mesmo padrão de segurança já estabelecido pela DEC-019 (caso de pastoreio) e pela Fase 6 (discipulado).
+
+### DEC-032 — Guarda de integridade opcional em `group_cooperators`: `UNIQUE(group_id, person_id) WHERE ended_at IS NULL`
+
+**Data:** 2026-07-09
+**Decisão:** Diferente de `service_assignments` (Fase 7), que não tem nenhum índice de unicidade sobre atribuições ativas, `group_cooperators` recebeu `UNIQUE (group_id, person_id) WHERE ended_at IS NULL`. A tabela também não tem coluna `updated_at`/trigger, ao contrário de `group_hosts` e `service_assignments` — cooperador é apenas inserido ou encerrado, nunca editado em outro campo.
+**Motivo:** A 5.8 não exige essa constraint explicitamente, mas sem ela seria possível a mesma pessoa acumular duas linhas "ativas" de cooperador redundantes no mesmo GR (ex.: duplo clique em "Marcar como cooperador"), o que não representa nenhum estado de negócio válido — diferente de `service_assignments`, onde a mesma pessoa pode legitimamente servir em duas áreas distintas ao mesmo tempo (a unicidade ali seria incorreta). `addCooperator` já checa a existência antes de inserir (idempotência na aplicação), e a constraint no banco fecha a mesma condição de corrida que a DEC-019 já resolveu para casos de pastoreio.
+
 ---
 
 ## Decisões Pendentes
