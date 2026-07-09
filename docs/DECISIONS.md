@@ -263,6 +263,12 @@ Além dos 12, o painel da coordenação expõe "Casos escalados" (contagem de `p
 **Decisão:** `.github/workflows/tests.yml` (disparo manual via `workflow_dispatch`, mais em todo push para `main`) sobe um Supabase local via Docker no runner do GitHub Actions (`supabase start` + `supabase db reset` para aplicar migrations e seed), roda as 8 suítes pgTAP (`supabase test db`) e os 10 cenários Playwright (`playwright test`) contra esse banco descartável, e publica o relatório do Playwright como artifact. `LEADER_SIGNUP_CODE=ci-teste` é fixado apenas no ambiente do job, sem relação com o código de convite real usado em produção.
 **Motivo:** O sandbox de desenvolvimento usado neste projeto não tem Docker disponível (DEC-035), impedindo executar de fato as suítes de teste escritas. Runners do GitHub Actions têm Docker habilitado por padrão, tornando esse o caminho gratuito mais direto para finalmente rodar RLS/E2E de verdade — sem exigir que o responsável pelo produto instale nada localmente. Este workflow nunca toca o banco de produção; todo o ciclo (subir, semear, testar, derrubar) acontece em um Postgres efêmero do próprio job.
 
+### DEC-039 — GRANT explícito de tabela para `anon`/`authenticated`
+
+**Data:** 2026-07-09
+**Decisão:** `supabase/migrations/20260709000001_grants.sql` concede explicitamente `SELECT` a `anon` e `SELECT/INSERT/UPDATE/DELETE` a `authenticated` em todas as tabelas do schema `public`, mais `ALTER DEFAULT PRIVILEGES` equivalente para tabelas futuras.
+**Motivo:** A primeira execução real do `.github/workflows/tests.yml` (DEC-038) revelou que as 8 suítes pgTAP falhavam inteiramente com `permission denied for table profiles` (SQLSTATE 42501) — um erro de **GRANT ausente**, não de RLS. RLS restringe quais linhas uma role vê, mas o Postgres exige o GRANT de tabela antes mesmo de avaliar qualquer policy. Nenhuma migration deste projeto jamais concedeu esses privilégios explicitamente porque o Supabase Cloud já faz isso automaticamente no provisionamento do projeto (por isso o app sempre funcionou normalmente em produção, apesar de essa lacuna existir desde a Fase 1) — mas o Postgres local iniciado por `supabase start` no runner do GitHub Actions não herda esse bootstrap implícito. Esta migration tem efeito nulo em produção (privilégio já concedido) e corrige o ambiente de CI/local, tornando as migrations autossuficientes em qualquer Postgres, não apenas no provisionado pelo Supabase.
+
 ---
 
 ## Decisões Pendentes
@@ -270,6 +276,6 @@ Além dos 12, o painel da coordenação expõe "Casos escalados" (contagem de `p
 - Definir mecanismo de notificações internas para casos de pastoreio (criado, escalado) — ver DEC-021.
 - Definir onde/como o sistema deve expor um fluxo de atribuição de "função de liderança" que consulte `isEligibleToLeadFormatively` — ver DEC-025.
 - Considerar um mecanismo de limitação de tentativas (rate limiting) em `/cadastro-lider` caso o código de convite vaze — hoje a única barreira além do código é a aprovação manual.
-- Disparar `.github/workflows/tests.yml` (DEC-038) e confirmar resultado verde antes de aprovar dados reais — a suíte está pronta mas ainda não foi executada em nenhum ambiente real até a escrita desta nota.
+- Disparar `.github/workflows/tests.yml` novamente após a DEC-039 e confirmar resultado verde antes de aprovar dados reais.
 - Definir campos/comportamento de "Filtros e busca consolidada" para a coordenação — ver DEC-034.
 
