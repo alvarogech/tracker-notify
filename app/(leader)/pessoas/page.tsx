@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { requireRole } from '@/lib/auth/server'
 import { createClient } from '@/lib/supabase/server'
 import { PersonCard } from '@/components/people/PersonCard'
-import { UserPlus, UserRoundPlus } from 'lucide-react'
+import { UserPlus, UserRoundPlus, Sheet } from 'lucide-react'
 import { countVisits, shouldSuggestConversion } from '@/lib/business-rules/visitors'
 
 export const metadata: Metadata = { title: 'Pessoas' }
@@ -93,6 +93,15 @@ export default async function PessoasPage({ searchParams }: { searchParams: { q?
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold">{group?.name ?? 'Pessoas'}</h1>
         <div className="flex items-center gap-2">
+          {profile.role === 'admin' && (
+            <Link
+              href="/admin/pessoas/importar"
+              className="flex items-center gap-1.5 rounded-lg border border-input bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
+            >
+              <Sheet size={16} />
+              Importar
+            </Link>
+          )}
           <Link
             href="/pessoas/nova-visita"
             className="flex items-center gap-1.5 rounded-lg border border-input bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
