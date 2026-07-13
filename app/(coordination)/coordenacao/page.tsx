@@ -5,6 +5,7 @@ import { requireRole } from '@/lib/auth/server'
 import { createClient } from '@/lib/supabase/server'
 import { GroupCard } from '@/components/groups/GroupCard'
 import { DeleteGroupButton } from '@/components/groups/DeleteGroupButton'
+import { CascadeDeleteGroupButton } from '@/components/groups/CascadeDeleteGroupButton'
 import { StatTile } from '@/components/dashboard/StatTile'
 import { shouldSuggestConversion } from '@/lib/business-rules/visitors'
 import { isReportWithinDeadline } from '@/lib/business-rules/absences'
@@ -235,19 +236,24 @@ export default async function CoordenaçãoPage() {
   function GroupItem({ g }: { g: GroupRow }) {
     return (
       <div key={g.id} className="space-y-2">
-        <GroupCard group={g} />
+        <Link href={`/coordenacao/${g.id}`} className="block">
+          <GroupCard group={g} />
+        </Link>
         {isAdmin && (
-          <div className="flex gap-2 px-1">
-            <Link
-              href={`/coordenacao/${g.id}/editar`}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-accent transition-colors"
-            >
-              <Pencil size={12} />
-              Editar
-            </Link>
-            <div className="flex-1">
-              <DeleteGroupButton groupId={g.id} />
+          <div className="space-y-2 px-1">
+            <div className="flex gap-2">
+              <Link
+                href={`/coordenacao/${g.id}/editar`}
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-accent transition-colors"
+              >
+                <Pencil size={12} />
+                Editar
+              </Link>
+              <div className="flex-1">
+                <DeleteGroupButton groupId={g.id} />
+              </div>
             </div>
+            <CascadeDeleteGroupButton groupId={g.id} groupName={g.name} />
           </div>
         )}
       </div>

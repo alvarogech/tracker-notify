@@ -299,6 +299,12 @@ Além dos 12, o painel da coordenação expõe "Casos escalados" (contagem de `p
 **Decisão:** `.github/workflows/supabase-backup.yml` passa a usar a imagem de container `postgres:17` (antes `postgres:15`) para rodar o `pg_dump`.
 **Motivo:** Ao testar manualmente o workflow de backup pela primeira vez (após o responsável pelo produto cadastrar o secret `SUPABASE_DB_URL`), a execução falhou com `pg_dump: error: aborting because of server version mismatch — server version: 17.6; pg_dump version: 15.18`. O `pg_dump` recusa fazer dump de um servidor com versão major mais nova que a sua própria. O projeto Supabase de produção roda Postgres 17; a imagem do container precisa acompanhar essa versão (ou mais nova) para o backup funcionar.
 
+### DEC-045 — Página de detalhe do GR e exclusão em cascata para limpeza de GRs de teste
+
+**Data:** 2026-07-13
+**Decisão:** (1) Nova página `/coordenacao/[id]` (coordenação/admin) mostra um dashboard completo de um único GR — indicadores (membros, visitantes, presença, casos, anfitrião/cooperadores, cobertura de discipulado/formação/serviço), lista de membros e visitantes (linkando para `/pessoas/[id]`), casos de pastoreio abertos (linkando para `/casos/[id]`) e as últimas reuniões. O `GroupCard` na lista de `/coordenacao` agora é clicável e leva a essa página. (2) Nova ação `deleteGroupCascade` (só admin) exclui um GR e, na ordem correta de dependência, tudo vinculado a ele — reuniões, casos de pastoreio, discipulado, vínculos de serviço, anfitriões, cooperadores, transferências e os vínculos de pessoas — além de remover as pessoas que ficarem sem nenhum vínculo em qualquer outro GR (pessoas com histórico em outro GR são preservadas). Exposta via `CascadeDeleteGroupButton`, que exige digitar o nome exato do GR para confirmar (mais forte que o `confirm()` do botão "Excluir" padrão), tanto na lista quanto no dashboard do GR.
+**Motivo:** O botão "Excluir" existente (`deleteGroup`) recusa a exclusão sempre que o GR tem qualquer pessoa/reunião/caso vinculado — comportamento correto como padrão de segurança para GRs reais, mas que impedia o responsável pelo produto de limpar os GRs de teste criados durante o desenvolvimento antes de liberar o sistema para os líderes reais. Como essa operação é irreversível e apaga histórico pastoral, ela fica claramente separada do fluxo normal, exige confirmação por digitação do nome e é restrita a admin — não deve ser usada em GRs com dados reais.
+
 ---
 
 ## Decisões Pendentes
