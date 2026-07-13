@@ -3,9 +3,8 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { requireRole } from '@/lib/auth/server'
 import { createClient } from '@/lib/supabase/server'
-import { ArrowLeft, Phone, Mail, Calendar } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-import { formatDate } from '@/lib/utils'
+import { ArrowLeft } from 'lucide-react'
+import { PersonInfoCard } from '@/components/people/PersonInfoCard'
 import { countVisits, shouldSuggestConversion } from '@/lib/business-rules/visitors'
 import { isEligibleToServe, isEligibleToLeadFormatively } from '@/lib/business-rules/eligibility'
 import { VisitorPanel } from '@/components/people/VisitorPanel'
@@ -272,43 +271,17 @@ export default async function PersonPage({ params }: { params: { id: string } })
         <h1 className="truncate text-xl font-bold">{person.full_name}</h1>
       </div>
 
-      <div className="space-y-4 rounded-xl border bg-card p-5">
-        <div className="flex items-center gap-2">
-          <Badge variant={rel.type === 'member' ? 'default' : 'secondary'}>
-            {rel.type === 'member' ? 'Membro' : 'Visitante'}
-          </Badge>
-          {person.archived_at && (
-            <Badge variant="outline" className="text-muted-foreground">
-              Arquivado
-            </Badge>
-          )}
-        </div>
-
-        <div className="space-y-3 text-sm">
-          {person.phone && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Phone size={15} />
-              <span>{person.phone}</span>
-            </div>
-          )}
-          {person.email && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Mail size={15} />
-              <span>{person.email}</span>
-            </div>
-          )}
-          {person.birthdate && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Calendar size={15} />
-              <span>{formatDate(person.birthdate)}</span>
-            </div>
-          )}
-        </div>
-
-        <div className="pt-1 text-xs text-muted-foreground/60">
-          Vinculado em {formatDate(rel.started_at)}
-        </div>
-      </div>
+      <PersonInfoCard
+        personId={person.id}
+        fullName={person.full_name}
+        phone={person.phone ?? null}
+        email={person.email ?? null}
+        birthdate={person.birthdate ?? null}
+        startedAt={rel.started_at}
+        type={rel.type === 'member' ? 'member' : 'visitor'}
+        archived={!!person.archived_at}
+        canEdit
+      />
 
       {rel.type === 'visitor' && (
         <VisitorPanel

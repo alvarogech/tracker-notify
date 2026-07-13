@@ -14,6 +14,10 @@ export const createPersonSchema = z.object({
 
 export type CreatePersonInput = z.infer<typeof createPersonSchema>
 
+export const updatePersonSchema = createPersonSchema.omit({ type: true })
+
+export type UpdatePersonInput = z.infer<typeof updatePersonSchema>
+
 export const registerVisitorSchema = z.object({
   full_name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres').max(100),
   phone: z
