@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Phone } from 'lucide-react'
+import { Phone, AlertCircle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
 interface Person {
@@ -14,9 +14,10 @@ interface PersonCardProps {
   type: 'member' | 'visitor'
   visitCount?: number
   suggestConversion?: boolean
+  incomplete?: boolean
 }
 
-export function PersonCard({ person, type, visitCount, suggestConversion }: PersonCardProps) {
+export function PersonCard({ person, type, visitCount, suggestConversion, incomplete }: PersonCardProps) {
   return (
     <Link
       href={`/pessoas/${person.id}`}
@@ -31,18 +32,26 @@ export function PersonCard({ person, type, visitCount, suggestConversion }: Pers
           </span>
         )}
       </div>
-      {type === 'visitor' && (
-        <div className="ml-3 flex shrink-0 items-center gap-1.5">
-          {suggestConversion && (
-            <Badge variant="info" className="text-xs">
-              Sugerir vinculação
-            </Badge>
-          )}
-          <Badge variant="secondary" className="text-xs">
-            Visitante{typeof visitCount === 'number' ? ` · ${visitCount}` : ''}
+      <div className="ml-3 flex shrink-0 items-center gap-1.5">
+        {incomplete && (
+          <Badge variant="warning" className="text-xs">
+            <AlertCircle size={11} />
+            Completar dados
           </Badge>
-        </div>
-      )}
+        )}
+        {type === 'visitor' && (
+          <>
+            {suggestConversion && (
+              <Badge variant="info" className="text-xs">
+                Sugerir vinculação
+              </Badge>
+            )}
+            <Badge variant="secondary" className="text-xs">
+              Visitante{typeof visitCount === 'number' ? ` · ${visitCount}` : ''}
+            </Badge>
+          </>
+        )}
+      </div>
     </Link>
   )
 }

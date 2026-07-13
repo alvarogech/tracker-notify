@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { requireRole } from '@/lib/auth/server'
 import { createClient } from '@/lib/supabase/server'
 import { PersonCard } from '@/components/people/PersonCard'
-import { UserPlus, UserRoundPlus, Sheet } from 'lucide-react'
+import { UserPlus, UserRoundPlus, Sheet, AlertCircle } from 'lucide-react'
 import { countVisits, shouldSuggestConversion } from '@/lib/business-rules/visitors'
 
 export const metadata: Metadata = { title: 'Pessoas' }
@@ -12,6 +12,8 @@ interface PersonRow {
   id: string
   full_name: string
   phone?: string | null
+  email?: string | null
+  birthdate?: string | null
   archived_at?: string | null
 }
 
@@ -38,7 +40,7 @@ export default async function PessoasPage({ searchParams }: { searchParams: { q?
 
   let query = supabase
     .from('group_relationships')
-    .select('id, type, status, person:people(id, full_name, phone, archived_at)')
+    .select('id, type, status, person:people(id, full_name, phone, email, birthdate, archived_at)')
     .eq('status', 'active')
 
   if (group) query = query.eq('group_id', group.id)
@@ -59,6 +61,12 @@ export default async function PessoasPage({ searchParams }: { searchParams: { q?
 
   const members = people.filter((r) => r.type === 'member')
   const visitors = people.filter((r) => r.type === 'visitor')
+
+  function isIncomplete(person: PersonRow): boolean {
+    return !person.phone && !person.email && !person.birthdate
+  }
+
+  const incompleteCount = people.filter((r) => r.person && isIncomplete(r.person)).length
 
   let membersWithDiscipler = 0
   if (members.length > 0) {
@@ -119,6 +127,16 @@ export default async function PessoasPage({ searchParams }: { searchParams: { q?
         </div>
       </div>
 
+      {incompleteCount > 0 && (
+        <div className="flex items-center gap-2 rounded-lg border border-status-warning/30 bg-status-warning/10 px-3 py-2 text-xs text-status-warning">
+          <AlertCircle size={14} className="shrink-0" />
+          <span>
+            {incompleteCount} pessoa{incompleteCount > 1 ? 's' : ''} sem telefone, e-mail ou nascimento — abra o
+            perfil de cada uma para completar.
+          </span>
+        </div>
+      )}
+
       <input
         type="search"
         defaultValue={q}
@@ -137,7 +155,7 @@ export default async function PessoasPage({ searchParams }: { searchParams: { q?
             </p>
           </div>
           {members.map((r) => (
-            <PersonCard key={r.id} person={r.person!} type="member" />
+            <PersonCard key={r.id} person={r.person!} type="member" incomplete={isIncomplete(r.person!)} />
           ))}
         </section>
       )}
@@ -156,6 +174,7 @@ export default async function PessoasPage({ searchParams }: { searchParams: { q?
                 type="visitor"
                 visitCount={visitCount}
                 suggestConversion={shouldSuggestConversion(visitCount)}
+                incomplete={isIncomplete(r.person!)}
               />
             )
           })}

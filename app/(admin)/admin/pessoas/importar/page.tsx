@@ -28,8 +28,8 @@ export default async function ImportarPessoasPage() {
       <div>
         <h1 className="text-xl font-bold">Importar pessoas em massa</h1>
         <p className="text-sm text-muted-foreground">
-          Cole os dados copiados da sua planilha ou envie um arquivo CSV para cadastrar várias pessoas de uma vez em
-          um GR.
+          Cole os nomes copiados da sua planilha (um por linha) para cadastrar várias pessoas de uma vez em um GR. O
+          restante dos dados cada líder completa depois.
         </p>
       </div>
 

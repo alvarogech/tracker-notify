@@ -3,21 +3,22 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireRole } from '@/lib/auth/server'
 import { createPersonSchema } from '@/lib/validations/people'
-import type { ImportRow } from '@/lib/people/import'
+
+const nameSchema = createPersonSchema.pick({ full_name: true })
 
 interface ImportResult {
   imported: number
   errors: { line: number; reason: string }[]
 }
 
-export async function importPeopleAction(groupId: string, rows: ImportRow[]): Promise<ImportResult> {
+export async function importPeopleAction(groupId: string, names: string[]): Promise<ImportResult> {
   await requireRole(['admin'])
 
   if (!groupId) {
     return { imported: 0, errors: [{ line: 0, reason: 'Selecione um GR.' }] }
   }
-  if (rows.length === 0) {
-    return { imported: 0, errors: [{ line: 0, reason: 'Nenhuma linha para importar.' }] }
+  if (names.length === 0) {
+    return { imported: 0, errors: [{ line: 0, reason: 'Nenhum nome para importar.' }] }
   }
 
   const admin = createAdminClient()
@@ -28,31 +29,24 @@ export async function importPeopleAction(groupId: string, rows: ImportRow[]): Pr
   }
 
   const errors: { line: number; reason: string }[] = []
-  const validRows: ImportRow[] = []
+  const validNames: string[] = []
 
-  rows.forEach((row, idx) => {
-    const result = createPersonSchema.safeParse(row)
+  names.forEach((name, idx) => {
+    const result = nameSchema.safeParse({ full_name: name })
     if (!result.success) {
-      errors.push({ line: idx + 1, reason: `${row.full_name || '(sem nome)'}: ${result.error.errors[0].message}` })
+      errors.push({ line: idx + 1, reason: `"${name}": ${result.error.errors[0].message}` })
     } else {
-      validRows.push(row)
+      validNames.push(result.data.full_name)
     }
   })
 
-  if (validRows.length === 0) {
+  if (validNames.length === 0) {
     return { imported: 0, errors }
   }
 
   const { data: insertedPeople, error: peopleError } = await admin
     .from('people')
-    .insert(
-      validRows.map((r) => ({
-        full_name: r.full_name,
-        phone: r.phone || null,
-        email: r.email || null,
-        birthdate: r.birthdate || null,
-      })) as never
-    )
+    .insert(validNames.map((full_name) => ({ full_name })) as never)
     .select('id')
 
   if (peopleError || !insertedPeople) {
@@ -65,10 +59,10 @@ export async function importPeopleAction(groupId: string, rows: ImportRow[]): Pr
   const people = insertedPeople as unknown as { id: string }[]
 
   const { error: relError } = await admin.from('group_relationships').insert(
-    people.map((p, i) => ({
+    people.map((p) => ({
       person_id: p.id,
       group_id: groupId,
-      type: validRows[i].type,
+      type: 'member',
       status: 'active',
     })) as never
   )
