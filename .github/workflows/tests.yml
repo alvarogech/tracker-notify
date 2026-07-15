@@ -58,6 +58,11 @@ jobs:
       - name: Corrigir senhas dos usuários semeados via API do GoTrue
         run: node scripts/fix-seed-passwords.mjs
 
+      - name: "[Diagnóstico temporário] Inspecionar profiles.active"
+        run: |
+          CLEAN_DB_URL=$(echo "$DB_URL" | tr -d '"')
+          psql "$CLEAN_DB_URL" -c "SELECT id, email, role, active, pending_approval, signup_source FROM profiles ORDER BY email;"
+
       - name: Rodar testes E2E (Playwright)
         env:
           LEADER_SIGNUP_CODE: ci-teste
