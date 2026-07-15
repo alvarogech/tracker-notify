@@ -7,6 +7,17 @@ const PUBLIC_ROUTES = ['/login', '/recuperar-senha', '/cadastro-lider']
 // (página pública de divulgação, útil também para quem já está logado).
 const ALWAYS_PUBLIC = ['/acesso-desativado', '/grs']
 
+// supabase.auth.getUser() pode travar indefinidamente com cookie de sessão
+// expirado/inválido (bug conhecido do supabase-js) — sem timeout, isso trava
+// a Edge Function inteira até o limite da plataforma, derrubando toda rota
+// que passa pelo middleware. Trata timeout igual a "sem sessão".
+function withTimeout<T>(promise: PromiseLike<T>, ms: number): Promise<T> {
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
+  ])
+}
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request: { headers: request.headers } })
 
@@ -38,10 +49,10 @@ export async function middleware(request: NextRequest) {
 
   let user = null
   try {
-    const { data } = await supabase.auth.getUser()
+    const { data } = await withTimeout(supabase.auth.getUser(), 5000)
     user = data.user
   } catch {
-    // Supabase indisponível — tratar como não autenticado
+    // Supabase indisponível ou getUser() travado — tratar como não autenticado
   }
 
   // path === '/' usa comparação exata (não startsWith) porque toda rota
@@ -50,11 +61,16 @@ export async function middleware(request: NextRequest) {
 
   // Rota pública + usuário logado → redireciona para a área correta
   if (isPublic && user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role, active')
-      .eq('id', user.id)
-      .single()
+    let profile: { role: string; active: boolean } | null = null
+    try {
+      const { data } = await withTimeout(
+        supabase.from('profiles').select('role, active').eq('id', user.id).single(),
+        5000
+      )
+      profile = data
+    } catch {
+      // Timeout ou erro — deixa passar para o Server Component tratar
+    }
 
     // Se não conseguiu ler o perfil, deixa passar para o Server Component tratar
     if (!profile) return response
