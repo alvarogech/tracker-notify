@@ -7,7 +7,7 @@ export default async function LeaderLayout({ children }: { children: React.React
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <AppBrandHeader showLogout />
+      <AppBrandHeader showLogout settingsHref="/configuracoes" />
       <main className="flex-1 px-4 py-6 pb-20 max-w-2xl mx-auto w-full">
         {children}
       </main>

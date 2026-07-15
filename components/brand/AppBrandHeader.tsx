@@ -1,3 +1,5 @@
+import Link from 'next/link'
+import { Settings } from 'lucide-react'
 import { HuiosLogo, HuiosAppIcon } from './HuiosLogo'
 import { LogoutButton } from '@/components/auth/LogoutButton'
 import { cn } from '@/lib/utils'
@@ -8,13 +10,20 @@ interface AppBrandHeaderProps {
   /** Compact = apenas ícone + nome do GR (mobile). Full = wordmark completo. */
   compact?: boolean
   showLogout?: boolean
+  settingsHref?: string
 }
 
 /**
  * Cabeçalho de marca para as telas do líder e coordenação.
  * Mobile-first: usa ícone compacto em viewports pequenos.
  */
-export function AppBrandHeader({ groupName, className, compact = false, showLogout = false }: AppBrandHeaderProps) {
+export function AppBrandHeader({
+  groupName,
+  className,
+  compact = false,
+  showLogout = false,
+  settingsHref,
+}: AppBrandHeaderProps) {
   return (
     <header
       className={cn(
@@ -35,9 +44,18 @@ export function AppBrandHeader({ groupName, className, compact = false, showLogo
         </>
       )}
 
-      {showLogout && (
-        <div className="ml-auto">
-          <LogoutButton />
+      {(settingsHref || showLogout) && (
+        <div className="ml-auto flex items-center gap-3">
+          {settingsHref && (
+            <Link
+              href={settingsHref}
+              aria-label="Configurações"
+              className="text-huios-cream/70 transition-colors hover:text-huios-cream"
+            >
+              <Settings size={18} />
+            </Link>
+          )}
+          {showLogout && <LogoutButton />}
         </div>
       )}
     </header>

@@ -35,6 +35,12 @@ export default function HomePage() {
           >
             <Link href="/cadastro-lider">Sou líder de GR e quero me cadastrar</Link>
           </Button>
+          <Link
+            href="/grs"
+            className="text-center text-sm text-huios-cream/50 underline-offset-4 hover:text-huios-cream/80 hover:underline"
+          >
+            Quero visitar um GR
+          </Link>
         </div>
       </main>
 

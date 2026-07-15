@@ -2,8 +2,10 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 const PUBLIC_ROUTES = ['/login', '/recuperar-senha', '/cadastro-lider']
-// /acesso-desativado é separado: usuário logado pode ficar lá sem ser redirecionado
-const ALWAYS_PUBLIC = ['/acesso-desativado']
+// Sempre acessíveis independente de sessão, sem redirecionar em nenhuma
+// direção: /acesso-desativado (usuário logado precisa poder ficar lá) e /grs
+// (página pública de divulgação, útil também para quem já está logado).
+const ALWAYS_PUBLIC = ['/acesso-desativado', '/grs']
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request: { headers: request.headers } })
@@ -42,7 +44,9 @@ export async function middleware(request: NextRequest) {
     // Supabase indisponível — tratar como não autenticado
   }
 
-  const isPublic = PUBLIC_ROUTES.some((r) => path.startsWith(r))
+  // path === '/' usa comparação exata (não startsWith) porque toda rota
+  // começa com "/" — um startsWith aqui tornaria tudo "público".
+  const isPublic = path === '/' || PUBLIC_ROUTES.some((r) => path.startsWith(r))
 
   // Rota pública + usuário logado → redireciona para a área correta
   if (isPublic && user) {

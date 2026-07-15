@@ -15,7 +15,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <AppBrandHeader showLogout />
+      <AppBrandHeader showLogout settingsHref="/admin/configuracoes" />
       <main className="flex-1 px-4 py-6 pb-20 max-w-2xl mx-auto w-full">
         {children}
       </main>
