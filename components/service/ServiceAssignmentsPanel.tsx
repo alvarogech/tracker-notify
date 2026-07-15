@@ -6,7 +6,7 @@ import { Wrench, XCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { formatDate } from '@/lib/utils'
-import { startServiceAssignment, endServiceAssignment } from '@/app/(leader)/pessoas/[id]/servico-actions'
+import { startServiceAssignments, endServiceAssignment } from '@/app/(leader)/pessoas/[id]/servico-actions'
 
 interface MinistryAreaOption {
   id: string
@@ -37,10 +37,19 @@ export function ServiceAssignmentsPanel({
   history,
   areaOptions,
 }: ServiceAssignmentsPanelProps) {
-  const [selected, setSelected] = useState(areaOptions[0]?.id ?? '')
+  const [selected, setSelected] = useState<Set<string>>(new Set())
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
+
+  function toggleSelected(areaId: string) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(areaId)) next.delete(areaId)
+      else next.add(areaId)
+      return next
+    })
+  }
 
   function runAction(action: () => Promise<ActionResult>) {
     setError(null)
@@ -50,6 +59,7 @@ export function ServiceAssignmentsPanel({
         setError(result.error)
         return
       }
+      setSelected(new Set())
       router.refresh()
     })
   }
@@ -57,7 +67,7 @@ export function ServiceAssignmentsPanel({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-sm">Serviço</CardTitle>
+        <CardTitle className="text-sm">Grupos de Atuação</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {activeAssignments.length > 0 ? (
@@ -98,33 +108,37 @@ export function ServiceAssignmentsPanel({
         {eligibleToServe ? (
           areaOptions.length > 0 && (
             <div className="space-y-2 border-t pt-3">
-              <p className="text-xs font-medium text-muted-foreground">Iniciar novo vínculo</p>
-              <div className="flex flex-wrap gap-2">
-                <select
-                  value={selected}
-                  onChange={(e) => setSelected(e.target.value)}
-                  aria-label="Área de serviço"
-                  className="h-10 flex-1 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                >
-                  {areaOptions.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.name}
-                    </option>
-                  ))}
-                </select>
-                <Button
-                  size="sm"
-                  disabled={isPending || !selected}
-                  onClick={() => runAction(() => startServiceAssignment(personId, selected))}
-                >
-                  Iniciar
-                </Button>
+              <p className="text-xs font-medium text-muted-foreground">
+                Iniciar novo vínculo — pode marcar mais de um grupo de atuação
+              </p>
+              <div className="space-y-1.5">
+                {areaOptions.map((option) => (
+                  <label
+                    key={option.id}
+                    className="flex items-center gap-2 rounded-md border border-input px-3 py-2 text-sm"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selected.has(option.id)}
+                      onChange={() => toggleSelected(option.id)}
+                      className="h-4 w-4 rounded border-input"
+                    />
+                    {option.name}
+                  </label>
+                ))}
               </div>
+              <Button
+                size="sm"
+                disabled={isPending || selected.size === 0}
+                onClick={() => runAction(() => startServiceAssignments(personId, Array.from(selected)))}
+              >
+                Iniciar
+              </Button>
             </div>
           )
         ) : (
           <p className="border-t pt-3 text-xs text-muted-foreground">
-            Cultura Emaús concluído é necessário para iniciar um novo vínculo de serviço.
+            Cultura Emaús concluído é necessário para iniciar um novo vínculo de atuação.
           </p>
         )}
 

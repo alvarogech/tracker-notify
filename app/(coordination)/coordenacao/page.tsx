@@ -337,7 +337,7 @@ export default async function CoordenaçãoPage() {
             icon={Award}
           />
           <StatTile
-            label="Com vínculo de serviço ativo"
+            label="Com grupo de atuação ativo"
             value={formatRateFraction(serviceCoverage)}
             icon={Briefcase}
           />

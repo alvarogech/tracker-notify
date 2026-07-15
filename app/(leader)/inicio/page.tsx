@@ -360,7 +360,7 @@ export default async function InicioPage() {
                   icon={Award}
                 />
                 <StatTile
-                  label="Com vínculo de serviço ativo"
+                  label="Com grupo de atuação ativo"
                   value={indicators.serviceLabel}
                   icon={Briefcase}
                 />

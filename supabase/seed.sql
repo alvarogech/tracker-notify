@@ -388,12 +388,12 @@ FROM training_programs tp WHERE tp.code = 'cultura_emaus';
 INSERT INTO service_assignments (person_id, ministry_area_id, group_id, started_at, created_by)
 SELECT '30000000-0000-0000-0000-000000000003', ma.id, '20000000-0000-0000-0000-000000000001',
        now() - interval '20 days', '00000000-0000-0000-0000-000000000003'
-FROM ministry_areas ma WHERE ma.name = 'Acolhimento';
+FROM ministry_areas ma WHERE ma.name = 'Velos';
 
 INSERT INTO service_assignments (person_id, ministry_area_id, group_id, started_at, created_by)
 SELECT '30000000-0000-0000-0000-000000000001', ma.id, '20000000-0000-0000-0000-000000000001',
        now() - interval '15 days', '00000000-0000-0000-0000-000000000003'
-FROM ministry_areas ma WHERE ma.name = 'Mídia e Som';
+FROM ministry_areas ma WHERE ma.name = 'Sobrenatural';
 
 -- ============================================================
 -- Papéis no GR — Anfitrião e Cooperador — GR Norte (5.8)

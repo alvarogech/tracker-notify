@@ -62,14 +62,14 @@ async function getAccessibleAssignment(assignmentId: string): Promise<Assignment
   return { id: row.id, leaderId: row.groups.leader_id, personId: row.person_id }
 }
 
-export async function startServiceAssignment(
+export async function startServiceAssignments(
   personId: string,
-  ministryAreaId: string
+  ministryAreaIds: string[]
 ): Promise<ActionResult> {
   const profile = await requireRole(['leader', 'coordinator', 'admin'])
   const result = startServiceAssignmentSchema.safeParse({
     person_id: personId,
-    ministry_area_id: ministryAreaId,
+    ministry_area_ids: ministryAreaIds,
   })
   if (!result.success) return { error: result.error.errors[0].message }
 
@@ -77,23 +77,25 @@ export async function startServiceAssignment(
   if (!personGroup) return { error: 'Pessoa não encontrada em nenhum GR ativo.' }
 
   if (profile.role === 'leader' && personGroup.leaderId !== profile.id) {
-    return { error: 'Sem permissão para registrar serviço desta pessoa.' }
+    return { error: 'Sem permissão para registrar atuação desta pessoa.' }
   }
 
   const completedPrograms = await getCompletedProgramCodes(result.data.person_id)
   if (!isEligibleToServe(completedPrograms)) {
-    return { error: 'Novo vínculo de serviço exige Cultura Emaús concluído.' }
+    return { error: 'Novo vínculo de atuação exige Cultura Emaús concluído.' }
   }
 
   const admin = createAdminClient()
-  const { error } = await admin.from('service_assignments').insert({
-    person_id: result.data.person_id,
-    ministry_area_id: result.data.ministry_area_id,
-    group_id: personGroup.groupId,
-    created_by: profile.id,
-  } as never)
+  const { error } = await admin.from('service_assignments').insert(
+    result.data.ministry_area_ids.map((ministryAreaId) => ({
+      person_id: result.data.person_id,
+      ministry_area_id: ministryAreaId,
+      group_id: personGroup.groupId,
+      created_by: profile.id,
+    })) as never
+  )
 
-  if (error) return { error: 'Erro ao iniciar vínculo de serviço.' }
+  if (error) return { error: 'Erro ao iniciar vínculo de atuação.' }
 
   revalidatePath(`/pessoas/${result.data.person_id}`)
   return { success: true }
@@ -105,7 +107,7 @@ export async function endServiceAssignment(assignmentId: string): Promise<Action
   if (!result.success) return { error: result.error.errors[0].message }
 
   const assignment = await getAccessibleAssignment(result.data.assignment_id)
-  if (!assignment) return { error: 'Vínculo de serviço não encontrado.' }
+  if (!assignment) return { error: 'Vínculo de atuação não encontrado.' }
   if (profile.role === 'leader' && assignment.leaderId !== profile.id) {
     return { error: 'Sem permissão para encerrar este vínculo.' }
   }
@@ -116,7 +118,7 @@ export async function endServiceAssignment(assignmentId: string): Promise<Action
     .update({ ended_at: new Date().toISOString() } as never)
     .eq('id', assignment.id)
 
-  if (error) return { error: 'Erro ao encerrar vínculo de serviço.' }
+  if (error) return { error: 'Erro ao encerrar vínculo de atuação.' }
 
   revalidatePath(`/pessoas/${assignment.personId}`)
   return { success: true }

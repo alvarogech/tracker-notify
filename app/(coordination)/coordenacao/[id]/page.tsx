@@ -289,7 +289,7 @@ export default async function GroupDetailPage({ params }: { params: { id: string
             value={formatRateFraction(eligibleLeadCoverage)}
             icon={Award}
           />
-          <StatTile label="Com vínculo de serviço ativo" value={formatRateFraction(serviceCoverage)} icon={Briefcase} />
+          <StatTile label="Com grupo de atuação ativo" value={formatRateFraction(serviceCoverage)} icon={Briefcase} />
           <StatTile
             label={`Relatórios no prazo (${ON_TIME_WINDOW_DAYS} dias)`}
             value={formatRatePercent(onTimeRate)}
