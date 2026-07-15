@@ -42,6 +42,32 @@ INSERT INTO profiles (id, full_name, email, role, active) VALUES
   ('00000000-0000-0000-0000-000000000008', 'Marcelo Dias',      'cooperador.norte@huios.dev', 'cooperator', true);
 
 -- ============================================================
+-- Pessoa vinculada a cada perfil (fase 12 — discipulador pode ser qualquer
+-- pessoa cadastrada, não só quem tem login no sistema). Mesmo padrão que a
+-- migration 20260715000001 aplica em produção via backfill: cada perfil
+-- ganha um registro correspondente em people (sem group_relationships —
+-- não é membro de nenhum GR, só fica disponível para atribuição/prioridade).
+-- ============================================================
+INSERT INTO people (id, full_name) VALUES
+  ('40000000-0000-0000-0000-000000000001', 'Admin HUIOS'),
+  ('40000000-0000-0000-0000-000000000002', 'Coord. HUIOS'),
+  ('40000000-0000-0000-0000-000000000003', 'Lucas Ferreira'),
+  ('40000000-0000-0000-0000-000000000004', 'Camila Souza'),
+  ('40000000-0000-0000-0000-000000000005', 'Rafael Oliveira'),
+  ('40000000-0000-0000-0000-000000000006', 'Juliana Mendes'),
+  ('40000000-0000-0000-0000-000000000007', 'André Costa'),
+  ('40000000-0000-0000-0000-000000000008', 'Marcelo Dias');
+
+UPDATE profiles SET person_id = '40000000-0000-0000-0000-000000000001' WHERE id = '00000000-0000-0000-0000-000000000001';
+UPDATE profiles SET person_id = '40000000-0000-0000-0000-000000000002' WHERE id = '00000000-0000-0000-0000-000000000002';
+UPDATE profiles SET person_id = '40000000-0000-0000-0000-000000000003' WHERE id = '00000000-0000-0000-0000-000000000003';
+UPDATE profiles SET person_id = '40000000-0000-0000-0000-000000000004' WHERE id = '00000000-0000-0000-0000-000000000004';
+UPDATE profiles SET person_id = '40000000-0000-0000-0000-000000000005' WHERE id = '00000000-0000-0000-0000-000000000005';
+UPDATE profiles SET person_id = '40000000-0000-0000-0000-000000000006' WHERE id = '00000000-0000-0000-0000-000000000006';
+UPDATE profiles SET person_id = '40000000-0000-0000-0000-000000000007' WHERE id = '00000000-0000-0000-0000-000000000007';
+UPDATE profiles SET person_id = '40000000-0000-0000-0000-000000000008' WHERE id = '00000000-0000-0000-0000-000000000008';
+
+-- ============================================================
 -- Rede e GRs
 -- ============================================================
 INSERT INTO networks (id, name) VALUES
@@ -57,8 +83,8 @@ INSERT INTO groups (id, network_id, name, leader_id, day_of_week, meeting_time, 
 -- ============================================================
 -- Acesso de cooperador (fase 11) — cooperador do GR Norte
 -- ============================================================
-INSERT INTO group_helpers (profile_id, group_id, created_by) VALUES
-  ('00000000-0000-0000-0000-000000000008', '20000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001');
+INSERT INTO group_helpers (profile_id, group_id, person_id, created_by) VALUES
+  ('00000000-0000-0000-0000-000000000008', '20000000-0000-0000-0000-000000000001', '40000000-0000-0000-0000-000000000008', '00000000-0000-0000-0000-000000000001');
 
 -- ============================================================
 -- Pessoas fictícias
@@ -287,9 +313,11 @@ INSERT INTO pastoral_actions (case_id, description, created_by, created_at) VALU
 -- ============================================================
 
 -- Marcos Alves (001): discipulado ativo pelo próprio líder do GR Norte
+-- (o discipulador é a pessoa 40000000...003 vinculada ao perfil de Lucas
+-- Ferreira — ver bloco "Pessoa vinculada a cada perfil" acima)
 INSERT INTO discipleship_assignments (person_id, discipler_id, group_id, started_at, created_by, created_at) VALUES
   ('30000000-0000-0000-0000-000000000001',
-   '00000000-0000-0000-0000-000000000003',
+   '40000000-0000-0000-0000-000000000003',
    '20000000-0000-0000-0000-000000000001',
    now() - interval '60 days',
    '00000000-0000-0000-0000-000000000003',
@@ -300,7 +328,7 @@ INSERT INTO discipleship_assignments (person_id, discipler_id, group_id, started
 -- vínculo anterior preservando o histórico (5.3)
 INSERT INTO discipleship_assignments (person_id, discipler_id, group_id, started_at, ended_at, created_by, created_at) VALUES
   ('30000000-0000-0000-0000-000000000002',
-   '00000000-0000-0000-0000-000000000003',
+   '40000000-0000-0000-0000-000000000003',
    '20000000-0000-0000-0000-000000000001',
    now() - interval '90 days',
    now() - interval '30 days',
@@ -309,7 +337,7 @@ INSERT INTO discipleship_assignments (person_id, discipler_id, group_id, started
 
 INSERT INTO discipleship_assignments (person_id, discipler_id, group_id, started_at, created_by, created_at) VALUES
   ('30000000-0000-0000-0000-000000000002',
-   '00000000-0000-0000-0000-000000000002',
+   '40000000-0000-0000-0000-000000000002',
    '20000000-0000-0000-0000-000000000001',
    now() - interval '30 days',
    '00000000-0000-0000-0000-000000000002',

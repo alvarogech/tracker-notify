@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { requireRole } from '@/lib/auth/server'
 import { createClient } from '@/lib/supabase/server'
+import type { UserProfile } from '@/lib/auth/types'
 import { ArrowLeft } from 'lucide-react'
 import { PersonInfoCard } from '@/components/people/PersonInfoCard'
 import { countVisits, shouldSuggestConversion } from '@/lib/business-rules/visitors'
@@ -52,6 +53,64 @@ interface AssignmentRow {
   started_at: string
   ended_at: string | null
   discipler: { id: string; full_name: string } | null
+}
+
+interface DisciplerOptionRow {
+  id: string
+  fullName: string
+}
+
+function sortDisciplerOptions(rows: DisciplerOptionRow[], priorityIds: Set<string>): DisciplerOptionRow[] {
+  const byName = (a: DisciplerOptionRow, b: DisciplerOptionRow) => a.fullName.localeCompare(b.fullName, 'pt-BR')
+  const priority = rows.filter((r) => priorityIds.has(r.id)).sort(byName)
+  const rest = rows.filter((r) => !priorityIds.has(r.id)).sort(byName)
+  return [...priority, ...rest]
+}
+
+// Coordenação/admin veem a rede inteira (líderes/cooperadores ativos primeiro,
+// depois o resto); líder comum vê só pessoas do próprio GR (líderes fora do
+// próprio GR nunca aparecem — CLAUDE.md 7, líder não visualiza outros GRs).
+async function getDisciplerOptions(
+  supabase: ReturnType<typeof createClient>,
+  profile: UserProfile,
+  ownGroupId: string | null
+): Promise<DisciplerOptionRow[]> {
+  if (profile.role === 'coordinator' || profile.role === 'admin') {
+    const [peopleRes, leaderRes, cooperatorRes] = await Promise.all([
+      supabase.from('people').select('id, full_name').is('archived_at', null),
+      supabase.from('profiles').select('person_id').eq('role', 'leader').eq('active', true).not('person_id', 'is', null),
+      supabase.from('group_cooperators').select('person_id').is('ended_at', null),
+    ])
+    const priorityIds = new Set<string>([
+      ...((leaderRes.data ?? []) as { person_id: string }[]).map((r) => r.person_id),
+      ...((cooperatorRes.data ?? []) as { person_id: string }[]).map((r) => r.person_id),
+    ])
+    const rows = ((peopleRes.data ?? []) as { id: string; full_name: string }[]).map((p) => ({
+      id: p.id,
+      fullName: p.full_name,
+    }))
+    return sortDisciplerOptions(rows, priorityIds)
+  }
+
+  if (profile.role === 'leader' && ownGroupId) {
+    const [relRes, cooperatorRes] = await Promise.all([
+      supabase
+        .from('group_relationships')
+        .select('person_id, person:people(id, full_name)')
+        .eq('group_id', ownGroupId)
+        .eq('status', 'active'),
+      supabase.from('group_cooperators').select('person_id').eq('group_id', ownGroupId).is('ended_at', null),
+    ])
+    const priorityIds = new Set(((cooperatorRes.data ?? []) as { person_id: string }[]).map((r) => r.person_id))
+    const rows = (
+      (relRes.data ?? []) as unknown as { person_id: string; person: { id: string; full_name: string } | null }[]
+    )
+      .filter((r) => r.person)
+      .map((r) => ({ id: r.person!.id, fullName: r.person!.full_name }))
+    return sortDisciplerOptions(rows, priorityIds)
+  }
+
+  return []
 }
 
 interface TrainingProgramRow {
@@ -126,7 +185,7 @@ export default async function PersonPage({ params }: { params: { id: string } })
     visitsRes,
     openCaseRes,
     assignmentRes,
-    disciplerRes,
+    disciplerOptions,
     programsRes,
     recordsRes,
     areasRes,
@@ -150,18 +209,13 @@ export default async function PersonPage({ params }: { params: { id: string } })
     !isCooperator
       ? supabase
           .from('discipleship_assignments')
-          .select('id, started_at, ended_at, discipler:profiles(id, full_name)')
+          .select('id, started_at, ended_at, discipler:people(id, full_name)')
           .eq('person_id', person.id)
           .order('started_at', { ascending: false })
       : Promise.resolve({ data: [] as unknown[] }),
-    !isCooperator
-      ? supabase
-          .from('profiles')
-          .select('id, full_name')
-          .eq('active', true)
-          .in('role', ['leader', 'coordinator', 'admin'])
-          .order('full_name')
-      : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
+    !isCooperator && rel.type === 'member'
+      ? getDisciplerOptions(supabase, profile, isMemberWithGroup && rel.group ? rel.group.id : null)
+      : Promise.resolve([] as DisciplerOptionRow[]),
     !isCooperator
       ? supabase.from('training_programs').select('id, code, name, display_order').order('display_order')
       : Promise.resolve({ data: [] as unknown[] }),
@@ -220,9 +274,7 @@ export default async function PersonPage({ params }: { params: { id: string } })
   const activeAssignment = assignments.find((a) => a.endedAt === null) ?? null
   const history = assignments.filter((a) => a.endedAt !== null)
 
-  const disciplerOptions = ((disciplerRes.data ?? []) as { id: string; full_name: string }[])
-    .filter((d) => d.id !== activeAssignment?.disciplerId)
-    .map((d) => ({ id: d.id, fullName: d.full_name }))
+  const filteredDisciplerOptions = disciplerOptions.filter((d) => d.id !== activeAssignment?.disciplerId)
 
   const trainingPrograms = (programsRes.data ?? []) as unknown as TrainingProgramRow[]
   const trainingRecords = (recordsRes.data ?? []) as unknown as TrainingRecordRow[]
@@ -343,7 +395,7 @@ export default async function PersonPage({ params }: { params: { id: string } })
           personId={person.id}
           activeAssignment={activeAssignment}
           history={history}
-          disciplerOptions={disciplerOptions}
+          disciplerOptions={filteredDisciplerOptions}
         />
       )}
 

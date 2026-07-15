@@ -29,21 +29,24 @@ async function getActiveGroupForPerson(personId: string): Promise<PersonGroup | 
 
 async function isValidDiscipler(disciplerId: string): Promise<boolean> {
   const admin = createAdminClient()
-  const { data } = await admin
-    .from('profiles')
-    .select('id')
-    .eq('id', disciplerId)
-    .eq('active', true)
-    .in('role', ['leader', 'coordinator', 'admin'])
-    .maybeSingle()
+  const { data } = await admin.from('people').select('id').eq('id', disciplerId).is('archived_at', null).maybeSingle()
   return !!data
 }
 
-function canAssign(profile: UserProfile, personGroup: PersonGroup, disciplerId: string): boolean {
+async function canAssign(profile: UserProfile, personGroup: PersonGroup, disciplerId: string): Promise<boolean> {
   if (profile.role === 'coordinator' || profile.role === 'admin') return true
-  // Líder só enxerga o próprio perfil via RLS de profiles (profiles_self_read),
-  // então só pode se atribuir como discipulador do próprio GR.
-  return personGroup.leaderId === profile.id && disciplerId === profile.id
+  if (personGroup.leaderId !== profile.id) return false
+
+  // Líder pode escolher qualquer pessoa cadastrada do próprio GR como discipulador.
+  const admin = createAdminClient()
+  const { data } = await admin
+    .from('group_relationships')
+    .select('id')
+    .eq('person_id', disciplerId)
+    .eq('group_id', personGroup.groupId)
+    .eq('status', 'active')
+    .maybeSingle()
+  return !!data
 }
 
 interface AssignmentAccess {
@@ -80,7 +83,7 @@ export async function assignDiscipler(personId: string, disciplerId: string): Pr
   const personGroup = await getActiveGroupForPerson(result.data.person_id)
   if (!personGroup) return { error: 'Pessoa não encontrada em nenhum GR ativo.' }
 
-  if (!canAssign(profile, personGroup, result.data.discipler_id)) {
+  if (!(await canAssign(profile, personGroup, result.data.discipler_id))) {
     return { error: 'Sem permissão para atribuir este discipulador.' }
   }
 

@@ -48,6 +48,17 @@ export async function signupLeaderAction(_: unknown, formData: FormData): Promis
 
   const userId = created.user.id
 
+  const { data: personRow, error: personError } = await admin
+    .from('people')
+    .insert({ full_name: result.data.full_name } as never)
+    .select('id')
+    .single()
+
+  if (personError || !personRow) {
+    await admin.auth.admin.deleteUser(userId)
+    return { error: 'Erro ao criar registro de pessoa. Tente novamente.' }
+  }
+
   const { error: profileError } = await admin.from('profiles').insert({
     id: userId,
     full_name: result.data.full_name,
@@ -56,6 +67,7 @@ export async function signupLeaderAction(_: unknown, formData: FormData): Promis
     active: false,
     signup_source: 'self',
     pending_approval: true,
+    person_id: (personRow as { id: string }).id,
   } as never)
 
   if (profileError) {

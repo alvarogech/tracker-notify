@@ -81,6 +81,7 @@ export async function grantCooperatorAccess(
     email: emailResult.data,
     role: 'cooperator',
     active: true,
+    person_id: personId,
   } as never)
 
   if (profileError) {
