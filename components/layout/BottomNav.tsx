@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Home, CalendarDays, Users, HeartHandshake, LayoutDashboard, Building2, Inbox } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import type { UserRole } from '@/lib/auth/types'
 
 const ICON_MAP = {
   Home,
@@ -29,6 +30,36 @@ const DEFAULT_ITEMS: NavItem[] = [
   { href: '/pessoas', label: 'Pessoas', icon: 'Users' },
   { href: '/casos', label: 'Casos', icon: 'HeartHandshake' },
 ]
+
+// Fonte única dos itens de navegação por papel — usada pelos três layouts
+// ((admin), (coordination), (leader)) para que o rodapé nunca mude ao
+// navegar entre seções que ficam em route groups diferentes (ex: admin
+// clicando de /admin para /pessoas, que fisicamente mora em (leader)).
+export function getNavItemsForRole(role: UserRole): NavItem[] {
+  if (role === 'admin') {
+    return [
+      { href: '/admin', label: 'Painel', icon: 'LayoutDashboard' },
+      { href: '/admin/solicitacoes', label: 'Solicitações', icon: 'Inbox' },
+      { href: '/coordenacao', label: 'GRs', icon: 'Building2' },
+      { href: '/pessoas', label: 'Pessoas', icon: 'Users' },
+      { href: '/casos', label: 'Casos', icon: 'HeartHandshake' },
+    ]
+  }
+  if (role === 'coordinator') {
+    return [
+      { href: '/coordenacao', label: 'GRs', icon: 'Building2' },
+      { href: '/pessoas', label: 'Pessoas', icon: 'Users' },
+      { href: '/casos', label: 'Casos', icon: 'HeartHandshake' },
+    ]
+  }
+  if (role === 'cooperator') {
+    return [
+      { href: '/reunioes', label: 'Reuniões', icon: 'CalendarDays' },
+      { href: '/pessoas', label: 'Pessoas', icon: 'Users' },
+    ]
+  }
+  return DEFAULT_ITEMS
+}
 
 export function BottomNav({ items = DEFAULT_ITEMS }: { items?: NavItem[] }) {
   const pathname = usePathname()

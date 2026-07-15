@@ -335,6 +335,12 @@ Além dos 12, o painel da coordenação expõe "Casos escalados" (contagem de `p
 **Decisão:** (1) `01_profiles_recursion.test.sql` esperava exatamente 7 perfis semeados (contagem hardcoded) — corrigido para 8 depois que a DEC-049 adicionou o cooperador de teste ao `seed.sql`. (2) `05_cooperator_scope.test.sql` testava a prevenção de auto-escalonamento de escopo do cooperador (`UPDATE group_helpers SET group_id = ...`) com `throws_ok(..., '42501')`, mas RLS em UPDATE **não lança exceção** quando a linha alvo fica invisível ao `USING` da policy — o Postgres só atualiza 0 linhas silenciosamente (diferente de INSERT, onde falhar o `WITH CHECK` lança 42501 de verdade). Corrigido trocando por uma verificação de estado: roda o UPDATE como instrução solta e confirma via `is()` que o `group_id` da linha permaneceu inalterado.
 **Motivo:** A primeira execução real do workflow após a DEC-049 (commit 76ecb59) falhou a suíte de RLS antes mesmo de chegar ao E2E — `Files=5, Tests=41, Result: FAIL`, com os dois problemas acima. Ambos eram defeitos nos próprios testes novos/no fixture de seed, não nas policies de RLS em si (a policy de `group_helpers` já estava correta — o teste que a exercitava é que usava a técnica de asserção errada para UPDATE).
 
+### DEC-051 — Navegação inferior inconsistente entre route groups
+
+**Data:** 2026-07-15
+**Decisão:** Os três layouts `(admin)`, `(coordination)` e `(leader)` cada um definia sua própria lista de itens de `BottomNav`. Como rotas como `/pessoas` e `/casos` moram fisicamente em `(leader)/`, qualquer papel que navegasse até essas URLs passava a ser envolvido pelo layout `(leader)`, não pelo layout da seção de onde a navegação partiu — trocando os ícones do rodapé no meio da navegação (ex: admin em `/admin` via um rodapé, ao clicar em "Pessoas" via outro). Corrigido centralizando a decisão numa única função, `getNavItemsForRole(role)` em `components/layout/BottomNav.tsx`, usada de forma idêntica pelos três layouts — o rodapé agora depende só do papel do usuário logado, nunca da rota/route group atual. De quebra, corrigido o mesmo tipo de inconsistência no ícone de engrenagem (configurações): admin sempre vai para `/admin/configuracoes`, independente de qual layout física está renderizando a página.
+**Motivo:** Bug relatado pelo responsável pelo produto ("os icones da parte inferior mudam dependendo da pagina").
+
 ---
 
 ## Decisões Pendentes
