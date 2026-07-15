@@ -365,6 +365,12 @@ Além dos 12, o painel da coordenação expõe "Casos escalados" (contagem de `p
 **Decisão:** (1) Dois registros fixos em `people` (Álvaro Henrique, Larissa Andrade — "pastores da rede") aparecem sempre no topo da lista de discipuladores disponíveis, à frente até de líderes/cooperadores, em qualquer GR — buscados via admin client porque não têm `group_relationships` em nenhum GR (o cliente escopado por RLS do líder nunca os enxergaria). (2) `/admin` agora cumprimenta pelo primeiro nome do perfil logado ("Olá, {nome}") em vez do genérico "Painel Administrativo" — usa `profile.full_name` de quem estiver logado, sem hardcode, então acompanha o que a pessoa configurar em `/admin/configuracoes`.
 **Motivo:** Pedido do responsável pelo produto.
 
+### DEC-056 — Produção quebrada: `@opentelemetry/api` não resolvido no bundle da Edge Function (middleware)
+
+**Data:** 2026-07-15
+**Decisão:** Adicionado `@opentelemetry/api` como dependência real do projeto (`pnpm add @opentelemetry/api`). O tracer interno do Next.js (`next/dist/server/lib/trace/tracer.js`) importa `@opentelemetry/api` de forma opcional; o bundler de Edge Functions da Netlify (esbuild, separado do webpack do Next.js) não aplica o mesmo aliasing/tratamento especial que o Next.js usa no build normal para Node.js, então falhava ao resolver o import ao empacotar `middleware.ts` como Edge Function — resultando em "This edge function has crashed" em toda rota (o middleware roda em quase todo path pelo `matcher` configurado), inclusive `/admin`.
+**Motivo:** Reportado pelo responsável pelo produto como aplicação fora do ar em produção (huios.netlify.app) — confirmado lendo o deploy log da Netlify, que mostrava `[ERROR] Could not resolve "@opentelemetry/api"` durante "Edge Functions bundling", junto com o cartão "This edge function has crashed" no painel do projeto. Instalar o pacote real (em vez de deixá-lo como import opcional não resolvido) permite ao bundler incluí-lo de verdade, eliminando o erro. Confirmado que o build local deixou de emitir o erro de resolução após a mudança.
+
 ---
 
 ## Decisões Pendentes
