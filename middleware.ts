@@ -1,22 +1,12 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { withTimeout } from '@/lib/timeout'
 
 const PUBLIC_ROUTES = ['/login', '/recuperar-senha', '/cadastro-lider']
 // Sempre acessíveis independente de sessão, sem redirecionar em nenhuma
 // direção: /acesso-desativado (usuário logado precisa poder ficar lá) e /grs
 // (página pública de divulgação, útil também para quem já está logado).
 const ALWAYS_PUBLIC = ['/acesso-desativado', '/grs']
-
-// supabase.auth.getUser() pode travar indefinidamente com cookie de sessão
-// expirado/inválido (bug conhecido do supabase-js) — sem timeout, isso trava
-// a Edge Function inteira até o limite da plataforma, derrubando toda rota
-// que passa pelo middleware. Trata timeout igual a "sem sessão".
-function withTimeout<T>(promise: PromiseLike<T>, ms: number): Promise<T> {
-  return Promise.race([
-    Promise.resolve(promise),
-    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
-  ])
-}
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request: { headers: request.headers } })

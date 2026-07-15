@@ -1,13 +1,26 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import type { UserProfile, UserRole } from './types'
 import { redirect } from 'next/navigation'
+import { withTimeout } from '@/lib/timeout'
 
 export async function getCurrentProfile(): Promise<UserProfile | null> {
-  try {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return null
+  const supabase = createClient()
 
+  // supabase.auth.getUser() pode ficar lento/travar (mesmo problema do
+  // middleware.ts) — trata timeout como "sem sessão" em vez de deixar a
+  // function inteira estourar o orçamento de execução.
+  let user: { id: string } | null = null
+  try {
+    const { data } = await withTimeout(supabase.auth.getUser(), 8000)
+    user = data.user
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error('[getCurrentProfile] getUser() falhou ou expirou:', e)
+    return null
+  }
+  if (!user) return null
+
+  try {
     // Usa admin client para evitar recursão infinita nas policies RLS de profiles
     const admin = createAdminClient()
     const { data } = await admin
@@ -21,7 +34,7 @@ export async function getCurrentProfile(): Promise<UserProfile | null> {
     // Next.js redige a mensagem de erro enviada ao navegador em produção — loga
     // aqui, no servidor, para conseguir ver a causa real nos logs da Netlify.
     // eslint-disable-next-line no-console
-    console.error('[getCurrentProfile] falhou:', e)
+    console.error('[getCurrentProfile] consulta a profiles falhou:', e)
     throw e
   }
 }
