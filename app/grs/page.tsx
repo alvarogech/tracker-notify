@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
-import { Clock, MapPin } from 'lucide-react'
+import Link from 'next/link'
+import { Clock, MapPin, UserPlus } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/server'
 import { HuiosLogo } from '@/components/brand/HuiosLogo'
 import { InstitutionalFooter } from '@/components/brand/InstitutionalFooter'
@@ -71,6 +72,13 @@ export default async function PublicGroupsPage() {
                     </p>
                   )}
                 </div>
+                <Link
+                  href={`/grs/${g.id}`}
+                  className="mt-3 flex items-center justify-center gap-1.5 rounded-lg border border-huios-cream/20 py-2 text-xs font-medium text-huios-cream/80 transition-colors hover:bg-huios-cream/10 hover:text-huios-cream"
+                >
+                  <UserPlus size={13} />
+                  Quero participar / completar meus dados
+                </Link>
               </div>
             ))}
 
