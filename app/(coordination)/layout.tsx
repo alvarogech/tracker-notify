@@ -1,5 +1,6 @@
 import { AppBrandHeader } from '@/components/brand/AppBrandHeader'
-import { BottomNav, getNavItemsForRole } from '@/components/layout/BottomNav'
+import { BottomNav } from '@/components/layout/BottomNav'
+import { getNavItemsForRole } from '@/lib/nav-items'
 import { requireRole } from '@/lib/auth/server'
 
 export default async function CoordinationLayout({ children }: { children: React.ReactNode }) {
