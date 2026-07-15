@@ -3,10 +3,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { createPersonSchema } from '@/lib/validations/people'
 import { requireRole } from '@/lib/auth/server'
+import { getCallerGroupId } from '@/lib/auth/group-scope'
 import { redirect } from 'next/navigation'
 
 export async function createPersonAction(_: unknown, formData: FormData) {
-  const profile = await requireRole(['leader', 'coordinator', 'admin'])
+  const profile = await requireRole(['leader', 'coordinator', 'admin', 'cooperator'])
   const supabase = createClient()
 
   const raw = {
@@ -22,15 +23,9 @@ export async function createPersonAction(_: unknown, formData: FormData) {
     return { error: result.error.errors[0].message }
   }
 
-  const { data: groupData } = await supabase
-    .from('groups')
-    .select('id')
-    .eq('leader_id', profile.id)
-    .eq('active', true)
-    .single()
-
-  const group = groupData as { id: string } | null
-  if (!group) return { error: 'Nenhum GR vinculado a este líder.' }
+  const groupId = await getCallerGroupId(profile)
+  if (!groupId) return { error: 'Nenhum GR vinculado a este usuário.' }
+  const group = { id: groupId }
 
   const { data: personData, error: personError } = await supabase
     .from('people')

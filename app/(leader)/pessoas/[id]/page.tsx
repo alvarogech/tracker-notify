@@ -16,6 +16,7 @@ import { ServiceAssignmentsPanel } from '@/components/service/ServiceAssignments
 import { TransferPersonPanel } from '@/components/groups/TransferPersonPanel'
 import { HostPanel } from '@/components/groups/HostPanel'
 import { CooperatorsPanel } from '@/components/groups/CooperatorsPanel'
+import { CooperatorAccessPanel } from '@/components/groups/CooperatorAccessPanel'
 
 export const metadata: Metadata = { title: 'Perfil da pessoa' }
 
@@ -92,7 +93,13 @@ interface GroupCooperatorRow {
 }
 
 export default async function PersonPage({ params }: { params: { id: string } }) {
-  const profile = await requireRole(['leader', 'coordinator', 'admin'])
+  const profile = await requireRole(['leader', 'coordinator', 'admin', 'cooperator'])
+  // Cooperador tem acesso puramente operacional (Reuniões e Pessoas) — sem
+  // pastoreio, discipulado, formação, serviço ou papéis de anfitrião/
+  // cooperador (CLAUDE.md 5.8). As seções abaixo ficam de fora tanto na
+  // consulta (evita ida ao banco que o RLS ia zerar mesmo assim) quanto na
+  // renderização.
+  const isCooperator = profile.role === 'cooperator'
   const supabase = createClient()
 
   const { data } = await supabase
@@ -127,36 +134,51 @@ export default async function PersonPage({ params }: { params: { id: string } })
     hostRes,
     cooperatorRes,
     transferGroupsRes,
+    helperRes,
   ] = await Promise.all([
     rel.type === 'visitor'
       ? supabase.from('visitor_visits').select('visited_at').eq('group_relationship_id', rel.id)
       : Promise.resolve({ data: [] as { visited_at: string }[] }),
-    supabase
-      .from('pastoral_cases')
-      .select('id, status, escalated_at')
-      .eq('person_id', person.id)
-      .eq('status', 'open')
-      .maybeSingle(),
-    supabase
-      .from('discipleship_assignments')
-      .select('id, started_at, ended_at, discipler:profiles(id, full_name)')
-      .eq('person_id', person.id)
-      .order('started_at', { ascending: false }),
-    supabase
-      .from('profiles')
-      .select('id, full_name')
-      .eq('active', true)
-      .in('role', ['leader', 'coordinator', 'admin'])
-      .order('full_name'),
-    supabase.from('training_programs').select('id, code, name, display_order').order('display_order'),
-    supabase.from('training_records').select('program_id, completed_at').eq('person_id', person.id),
-    supabase.from('ministry_areas').select('id, name').order('name'),
-    supabase
-      .from('service_assignments')
-      .select('id, started_at, ended_at, ministry_area:ministry_areas(id, name)')
-      .eq('person_id', person.id)
-      .order('started_at', { ascending: false }),
-    isMemberWithGroup && rel.group
+    !isCooperator
+      ? supabase
+          .from('pastoral_cases')
+          .select('id, status, escalated_at')
+          .eq('person_id', person.id)
+          .eq('status', 'open')
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    !isCooperator
+      ? supabase
+          .from('discipleship_assignments')
+          .select('id, started_at, ended_at, discipler:profiles(id, full_name)')
+          .eq('person_id', person.id)
+          .order('started_at', { ascending: false })
+      : Promise.resolve({ data: [] as unknown[] }),
+    !isCooperator
+      ? supabase
+          .from('profiles')
+          .select('id, full_name')
+          .eq('active', true)
+          .in('role', ['leader', 'coordinator', 'admin'])
+          .order('full_name')
+      : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
+    !isCooperator
+      ? supabase.from('training_programs').select('id, code, name, display_order').order('display_order')
+      : Promise.resolve({ data: [] as unknown[] }),
+    !isCooperator
+      ? supabase.from('training_records').select('program_id, completed_at').eq('person_id', person.id)
+      : Promise.resolve({ data: [] as unknown[] }),
+    !isCooperator
+      ? supabase.from('ministry_areas').select('id, name').order('name')
+      : Promise.resolve({ data: [] as unknown[] }),
+    !isCooperator
+      ? supabase
+          .from('service_assignments')
+          .select('id, started_at, ended_at, ministry_area:ministry_areas(id, name)')
+          .eq('person_id', person.id)
+          .order('started_at', { ascending: false })
+      : Promise.resolve({ data: [] as unknown[] }),
+    !isCooperator && isMemberWithGroup && rel.group
       ? supabase
           .from('group_hosts')
           .select('id, person_id, started_at, host:people(id, full_name)')
@@ -164,7 +186,7 @@ export default async function PersonPage({ params }: { params: { id: string } })
           .is('ended_at', null)
           .maybeSingle()
       : Promise.resolve({ data: null }),
-    isMemberWithGroup && rel.group
+    !isCooperator && isMemberWithGroup && rel.group
       ? supabase
           .from('group_cooperators')
           .select('id, started_at, ended_at')
@@ -176,6 +198,9 @@ export default async function PersonPage({ params }: { params: { id: string } })
     canTransfer && rel.type === 'member'
       ? supabase.from('groups').select('id, name').eq('active', true).order('name')
       : Promise.resolve({ data: [] as GroupOptionRow[] }),
+    !isCooperator
+      ? supabase.from('group_helpers').select('created_at, profiles(active)').eq('person_id', person.id).maybeSingle()
+      : Promise.resolve({ data: null }),
   ])
 
   const visitCount = countVisits(
@@ -259,6 +284,9 @@ export default async function PersonPage({ params }: { params: { id: string } })
     (g) => g.id !== rel.group?.id
   )
 
+  const helperRow = helperRes.data as unknown as { created_at: string; profiles: { active: boolean } | null } | null
+  const cooperatorAccess = helperRow ? { active: helperRow.profiles?.active ?? false, createdAt: helperRow.created_at } : null
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -291,7 +319,7 @@ export default async function PersonPage({ params }: { params: { id: string } })
         />
       )}
 
-      {rel.type === 'member' && (
+      {rel.type === 'member' && !isCooperator && (
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Pastoreio
@@ -310,7 +338,7 @@ export default async function PersonPage({ params }: { params: { id: string } })
         </div>
       )}
 
-      {rel.type === 'member' && (
+      {rel.type === 'member' && !isCooperator && (
         <DisciplershipPanel
           personId={person.id}
           activeAssignment={activeAssignment}
@@ -328,7 +356,7 @@ export default async function PersonPage({ params }: { params: { id: string } })
         />
       )}
 
-      {rel.type === 'member' && rel.group && (
+      {rel.type === 'member' && !isCooperator && rel.group && (
         <HostPanel
           personId={person.id}
           groupId={rel.group.id}
@@ -339,7 +367,7 @@ export default async function PersonPage({ params }: { params: { id: string } })
         />
       )}
 
-      {rel.type === 'member' && rel.group && (
+      {rel.type === 'member' && !isCooperator && rel.group && (
         <CooperatorsPanel
           personId={person.id}
           groupId={rel.group.id}
@@ -349,7 +377,16 @@ export default async function PersonPage({ params }: { params: { id: string } })
         />
       )}
 
-      {rel.type === 'member' && (
+      {rel.type === 'member' && !isCooperator && rel.group && isActiveCooperatorRole && (
+        <CooperatorAccessPanel
+          personId={person.id}
+          groupId={rel.group.id}
+          email={person.email ?? null}
+          access={cooperatorAccess}
+        />
+      )}
+
+      {rel.type === 'member' && !isCooperator && (
         <TrainingPanel
           personId={person.id}
           programs={programStatuses}
@@ -358,7 +395,7 @@ export default async function PersonPage({ params }: { params: { id: string } })
         />
       )}
 
-      {rel.type === 'member' && (
+      {rel.type === 'member' && !isCooperator && (
         <ServiceAssignmentsPanel
           personId={person.id}
           eligibleToServe={eligibleToServe}

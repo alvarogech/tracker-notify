@@ -7,7 +7,7 @@ import Link from 'next/link'
 export const metadata: Metadata = { title: 'Adicionar pessoa' }
 
 export default async function NovaPessoaPage() {
-  await requireRole(['leader', 'coordinator', 'admin'])
+  await requireRole(['leader', 'coordinator', 'admin', 'cooperator'])
 
   return (
     <div className="space-y-6">

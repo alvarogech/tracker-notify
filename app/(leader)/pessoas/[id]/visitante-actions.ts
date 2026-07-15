@@ -3,14 +3,12 @@
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireRole } from '@/lib/auth/server'
+import { getCallerGroupId } from '@/lib/auth/group-scope'
+import type { UserProfile } from '@/lib/auth/types'
 import { registerVisitorSchema } from '@/lib/validations/people'
 import { findDuplicatePhoneMatch, findSimilarNameMatches } from '@/lib/business-rules/visitors'
 
 type ActionResult = { error: string } | { success: true } | undefined
-
-interface LeaderGroup {
-  id: string
-}
 
 interface VisitorRelationship {
   id: string
@@ -18,44 +16,31 @@ interface VisitorRelationship {
   groupId: string
 }
 
-async function getLeaderGroup(leaderId: string): Promise<LeaderGroup | null> {
-  const admin = createAdminClient()
-  const { data } = await admin
-    .from('groups')
-    .select('id')
-    .eq('leader_id', leaderId)
-    .eq('active', true)
-    .single()
-  return (data as LeaderGroup | null) ?? null
-}
-
 async function assertActiveVisitorRelationship(
   relationshipId: string,
-  leaderId: string
+  profile: UserProfile
 ): Promise<VisitorRelationship | null> {
+  const callerGroupId = await getCallerGroupId(profile)
+  if (!callerGroupId) return null
+
   const admin = createAdminClient()
   const { data } = await admin
     .from('group_relationships')
-    .select('id, person_id, group_id, type, status, groups!inner(leader_id)')
+    .select('id, person_id, group_id, type, status')
     .eq('id', relationshipId)
     .eq('type', 'visitor')
     .eq('status', 'active')
     .single()
 
   if (!data) return null
-  const row = data as unknown as {
-    id: string
-    person_id: string
-    group_id: string
-    groups: { leader_id: string }
-  }
-  if (row.groups.leader_id !== leaderId) return null
+  const row = data as unknown as { id: string; person_id: string; group_id: string }
+  if (row.group_id !== callerGroupId) return null
   return { id: row.id, personId: row.person_id, groupId: row.group_id }
 }
 
 export async function recordVisit(relationshipId: string): Promise<ActionResult> {
-  const profile = await requireRole(['leader'])
-  const relationship = await assertActiveVisitorRelationship(relationshipId, profile.id)
+  const profile = await requireRole(['leader', 'cooperator'])
+  const relationship = await assertActiveVisitorRelationship(relationshipId, profile)
   if (!relationship) return { error: 'Visitante não encontrado ou sem permissão.' }
 
   const admin = createAdminClient()
@@ -73,7 +58,7 @@ export async function registerNewVisitor(
   _: unknown,
   formData: FormData
 ): Promise<{ error: string } | { warning: string; personId: string } | undefined> {
-  const profile = await requireRole(['leader'])
+  const profile = await requireRole(['leader', 'cooperator'])
 
   const raw = {
     full_name: formData.get('full_name'),
@@ -82,8 +67,9 @@ export async function registerNewVisitor(
   const result = registerVisitorSchema.safeParse(raw)
   if (!result.success) return { error: result.error.errors[0].message }
 
-  const group = await getLeaderGroup(profile.id)
-  if (!group) return { error: 'Nenhum GR vinculado a este líder.' }
+  const groupId = await getCallerGroupId(profile)
+  if (!groupId) return { error: 'Nenhum GR vinculado a este usuário.' }
+  const group = { id: groupId }
 
   const admin = createAdminClient()
   const { data: existingPeople } = await admin
@@ -148,8 +134,8 @@ export async function registerNewVisitor(
 }
 
 export async function confirmConversion(relationshipId: string): Promise<ActionResult> {
-  const profile = await requireRole(['leader'])
-  const relationship = await assertActiveVisitorRelationship(relationshipId, profile.id)
+  const profile = await requireRole(['leader', 'cooperator'])
+  const relationship = await assertActiveVisitorRelationship(relationshipId, profile)
   if (!relationship) return { error: 'Visitante não encontrado ou sem permissão.' }
 
   const admin = createAdminClient()
@@ -167,8 +153,8 @@ export async function confirmConversion(relationshipId: string): Promise<ActionR
 }
 
 export async function closeVisitorRelationship(relationshipId: string): Promise<ActionResult> {
-  const profile = await requireRole(['leader'])
-  const relationship = await assertActiveVisitorRelationship(relationshipId, profile.id)
+  const profile = await requireRole(['leader', 'cooperator'])
+  const relationship = await assertActiveVisitorRelationship(relationshipId, profile)
   if (!relationship) return { error: 'Visitante não encontrado ou sem permissão.' }
 
   const admin = createAdminClient()

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { requireRole } from '@/lib/auth/server'
+import { getCallerGroupId } from '@/lib/auth/group-scope'
 import { createClient } from '@/lib/supabase/server'
 import { PersonCard } from '@/components/people/PersonCard'
 import { UserPlus, UserRoundPlus, Sheet, AlertCircle } from 'lucide-react'
@@ -25,18 +26,26 @@ interface RelationshipRow {
 }
 
 export default async function PessoasPage({ searchParams }: { searchParams: { q?: string } }) {
-  const profile = await requireRole(['leader', 'coordinator', 'admin'])
+  const profile = await requireRole(['leader', 'coordinator', 'admin', 'cooperator'])
   const supabase = createClient()
   const q = searchParams.q?.trim() ?? ''
 
-  const { data: groupData } = await supabase
-    .from('groups')
-    .select('id, name')
-    .eq('leader_id', profile.id)
-    .eq('active', true)
-    .single()
-
-  const group = groupData as { id: string; name: string } | null
+  let group: { id: string; name: string } | null = null
+  if (profile.role === 'cooperator') {
+    const groupId = await getCallerGroupId(profile)
+    if (groupId) {
+      const { data: groupData } = await supabase.from('groups').select('id, name').eq('id', groupId).single()
+      group = groupData as { id: string; name: string } | null
+    }
+  } else {
+    const { data: groupData } = await supabase
+      .from('groups')
+      .select('id, name')
+      .eq('leader_id', profile.id)
+      .eq('active', true)
+      .single()
+    group = groupData as { id: string; name: string } | null
+  }
 
   let query = supabase
     .from('group_relationships')
@@ -69,7 +78,7 @@ export default async function PessoasPage({ searchParams }: { searchParams: { q?
   const incompleteCount = people.filter((r) => r.person && isIncomplete(r.person)).length
 
   let membersWithDiscipler = 0
-  if (members.length > 0) {
+  if (members.length > 0 && profile.role !== 'cooperator') {
     const memberPersonIds = members.map((r) => r.person!.id)
     const { count } = await supabase
       .from('discipleship_assignments')
@@ -150,9 +159,11 @@ export default async function PessoasPage({ searchParams }: { searchParams: { q?
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Membros · {members.length}
             </p>
-            <p className="text-xs text-muted-foreground">
-              {membersWithDiscipler} de {members.length} com discipulador atribuído
-            </p>
+            {profile.role !== 'cooperator' && (
+              <p className="text-xs text-muted-foreground">
+                {membersWithDiscipler} de {members.length} com discipulador atribuído
+              </p>
+            )}
           </div>
           {members.map((r) => (
             <PersonCard key={r.id} person={r.person!} type="member" incomplete={isIncomplete(r.person!)} />

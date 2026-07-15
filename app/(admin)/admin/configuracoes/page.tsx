@@ -21,7 +21,7 @@ interface ProfileRow {
   active: boolean
 }
 
-const ROLE_ORDER: Record<UserRole, number> = { admin: 0, coordinator: 1, leader: 2 }
+const ROLE_ORDER: Record<UserRole, number> = { admin: 0, coordinator: 1, leader: 2, cooperator: 3 }
 
 export default async function AdminConfiguracoesPage() {
   const profile = await requireRole(['admin'])

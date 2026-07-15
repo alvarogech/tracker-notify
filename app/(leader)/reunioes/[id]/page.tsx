@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { requireRole } from '@/lib/auth/server'
+import { getCallerGroupId } from '@/lib/auth/group-scope'
 import { createAdminClient } from '@/lib/supabase/server'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -48,8 +49,9 @@ function formatScheduled(iso: string) {
 }
 
 export default async function MeetingDetailPage({ params }: { params: { id: string } }) {
-  const profile = await requireRole(['leader'])
+  const profile = await requireRole(['leader', 'cooperator'])
   const admin = createAdminClient()
+  const callerGroupId = await getCallerGroupId(profile)
 
   // Fetch meeting and verify ownership
   const { data: meetingData } = await admin
@@ -61,7 +63,7 @@ export default async function MeetingDetailPage({ params }: { params: { id: stri
   if (!meetingData) notFound()
 
   const raw = meetingData as unknown as MeetingRow & { groups: { leader_id: string } }
-  if (raw.groups.leader_id !== profile.id) notFound()
+  if (!callerGroupId || raw.group_id !== callerGroupId) notFound()
 
   const meeting: MeetingRow = {
     id: raw.id,

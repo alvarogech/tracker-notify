@@ -13,4 +13,8 @@ describe('redirectAfterLogin', () => {
   it('admin → /admin', () => {
     expect(redirectAfterLogin('admin')).toBe('/admin')
   })
+
+  it('cooperator → /reunioes', () => {
+    expect(redirectAfterLogin('cooperator')).toBe('/reunioes')
+  })
 })

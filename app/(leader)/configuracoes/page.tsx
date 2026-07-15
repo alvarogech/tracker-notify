@@ -15,7 +15,7 @@ interface Group {
 }
 
 export default async function ConfiguracoesPage() {
-  const profile = await requireRole(['leader', 'coordinator', 'admin'])
+  const profile = await requireRole(['leader', 'coordinator', 'admin', 'cooperator'])
   const supabase = createClient()
 
   const { data } = await supabase

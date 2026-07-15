@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { requireRole } from '@/lib/auth/server'
+import { getCallerGroupId } from '@/lib/auth/group-scope'
 import { createAdminClient } from '@/lib/supabase/server'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -69,24 +70,16 @@ function StatusBadge({ meeting }: { meeting: Meeting }) {
 }
 
 export default async function ReunioesPage() {
-  const profile = await requireRole(['leader'])
+  const profile = await requireRole(['leader', 'cooperator'])
   const admin = createAdminClient()
-
-  const { data: groupData } = await admin
-    .from('groups')
-    .select('id')
-    .eq('leader_id', profile.id)
-    .eq('active', true)
-    .single()
-
-  const group = groupData as { id: string } | null
+  const groupId = await getCallerGroupId(profile)
 
   const meetings: Meeting[] = []
-  if (group) {
+  if (groupId) {
     const { data } = await admin
       .from('meetings')
       .select('id, scheduled_at, status, report_submitted_at, notes')
-      .eq('group_id', group.id)
+      .eq('group_id', groupId)
       .order('scheduled_at', { ascending: false })
 
     if (data) {

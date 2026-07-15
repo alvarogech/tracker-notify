@@ -25,7 +25,8 @@ VALUES
   ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000004', 'authenticated', 'authenticated', 'lider.sul@huios.dev',   crypt('Huios@2026', gen_salt('bf')), now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}', '', '', '', '', '', '', '', ''),
   ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000005', 'authenticated', 'authenticated', 'lider.leste@huios.dev', crypt('Huios@2026', gen_salt('bf')), now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}', '', '', '', '', '', '', '', ''),
   ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000006', 'authenticated', 'authenticated', 'lider.oeste@huios.dev', crypt('Huios@2026', gen_salt('bf')), now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}', '', '', '', '', '', '', '', ''),
-  ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000007', 'authenticated', 'authenticated', 'lider.centro@huios.dev',crypt('Huios@2026', gen_salt('bf')), now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}', '', '', '', '', '', '', '', '');
+  ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000007', 'authenticated', 'authenticated', 'lider.centro@huios.dev',crypt('Huios@2026', gen_salt('bf')), now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}', '', '', '', '', '', '', '', ''),
+  ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000008', 'authenticated', 'authenticated', 'cooperador.norte@huios.dev', crypt('Huios@2026', gen_salt('bf')), now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}', '', '', '', '', '', '', '', '');
 
 -- ============================================================
 -- Perfis
@@ -37,7 +38,8 @@ INSERT INTO profiles (id, full_name, email, role, active) VALUES
   ('00000000-0000-0000-0000-000000000004', 'Camila Souza',      'lider.sul@huios.dev',    'leader',      true),
   ('00000000-0000-0000-0000-000000000005', 'Rafael Oliveira',   'lider.leste@huios.dev',  'leader',      true),
   ('00000000-0000-0000-0000-000000000006', 'Juliana Mendes',    'lider.oeste@huios.dev',  'leader',      true),
-  ('00000000-0000-0000-0000-000000000007', 'André Costa',       'lider.centro@huios.dev', 'leader',      true);
+  ('00000000-0000-0000-0000-000000000007', 'André Costa',       'lider.centro@huios.dev', 'leader',      true),
+  ('00000000-0000-0000-0000-000000000008', 'Marcelo Dias',      'cooperador.norte@huios.dev', 'cooperator', true);
 
 -- ============================================================
 -- Rede e GRs
@@ -51,6 +53,12 @@ INSERT INTO groups (id, network_id, name, leader_id, day_of_week, meeting_time, 
   ('20000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000001', 'GR Leste',  '00000000-0000-0000-0000-000000000005', 2, '20:00', '21:30', 'Setor Leste'),
   ('20000000-0000-0000-0000-000000000004', '10000000-0000-0000-0000-000000000001', 'GR Oeste',  '00000000-0000-0000-0000-000000000006', 5, '19:30', '21:00', 'Setor Oeste'),
   ('20000000-0000-0000-0000-000000000005', '10000000-0000-0000-0000-000000000001', 'GR Centro', '00000000-0000-0000-0000-000000000007', 6, '10:00', '11:30', 'Setor Central');
+
+-- ============================================================
+-- Acesso de cooperador (fase 11) — cooperador do GR Norte
+-- ============================================================
+INSERT INTO group_helpers (profile_id, group_id, created_by) VALUES
+  ('00000000-0000-0000-0000-000000000008', '20000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001');
 
 -- ============================================================
 -- Pessoas fictícias

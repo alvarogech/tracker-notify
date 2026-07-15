@@ -7,7 +7,7 @@ import Link from 'next/link'
 export const metadata: Metadata = { title: 'Registrar visitante' }
 
 export default async function NovaVisitaPage() {
-  await requireRole(['leader'])
+  await requireRole(['leader', 'cooperator'])
 
   return (
     <div className="space-y-6">

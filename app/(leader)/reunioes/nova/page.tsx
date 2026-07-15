@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { requireRole } from '@/lib/auth/server'
+import { getCallerGroupId } from '@/lib/auth/group-scope'
 import { createAdminClient } from '@/lib/supabase/server'
 import { ArrowLeft } from 'lucide-react'
 import { NovaReuniaoForm } from './NovaReuniaoForm'
@@ -8,15 +9,13 @@ import { NovaReuniaoForm } from './NovaReuniaoForm'
 export const metadata: Metadata = { title: 'Nova Reunião' }
 
 export default async function NovaReuniaoPage() {
-  const profile = await requireRole(['leader'])
+  const profile = await requireRole(['leader', 'cooperator'])
   const admin = createAdminClient()
+  const groupId = await getCallerGroupId(profile)
 
-  const { data } = await admin
-    .from('groups')
-    .select('id, name')
-    .eq('leader_id', profile.id)
-    .eq('active', true)
-    .single()
+  const { data } = groupId
+    ? await admin.from('groups').select('id, name').eq('id', groupId).single()
+    : { data: null }
 
   const group = data as { id: string; name: string } | null
 

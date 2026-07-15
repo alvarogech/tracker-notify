@@ -11,6 +11,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
   leader: 'Líder',
   coordinator: 'Coordenação',
   admin: 'Admin',
+  cooperator: 'Cooperador',
 }
 
 interface UserRow {

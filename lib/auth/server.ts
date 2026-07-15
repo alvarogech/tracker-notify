@@ -34,5 +34,6 @@ export async function requireRole(allowed: UserRole[]): Promise<UserProfile> {
 export function redirectAfterLogin(role: UserRole): string {
   if (role === 'admin') return '/admin'
   if (role === 'coordinator') return '/coordenacao'
+  if (role === 'cooperator') return '/reunioes'
   return '/inicio'
 }

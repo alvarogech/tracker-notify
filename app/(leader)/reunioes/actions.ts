@@ -3,30 +3,24 @@
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireRole } from '@/lib/auth/server'
+import { getCallerGroupId } from '@/lib/auth/group-scope'
+import type { UserProfile } from '@/lib/auth/types'
 import { isReportWithinDeadline } from '@/lib/business-rules/absences'
 import { syncPastoralCasesAfterReport } from '@/lib/pastoral-care/case-sync'
 
 type ActionResult = { error: string } | undefined
 
-async function getLeaderGroupId(leaderId: string): Promise<string | null> {
-  const admin = createAdminClient()
-  const { data } = await admin
-    .from('groups')
-    .select('id')
-    .eq('leader_id', leaderId)
-    .eq('active', true)
-    .single()
-  return (data as { id: string } | null)?.id ?? null
-}
-
-async function assertMeetingBelongsToLeader(
+async function assertMeetingBelongsToCaller(
   meetingId: string,
-  leaderId: string
+  profile: UserProfile
 ): Promise<{ groupId: string; scheduledAt: string; reportSubmittedAt: string | null; status: string } | null> {
+  const callerGroupId = await getCallerGroupId(profile)
+  if (!callerGroupId) return null
+
   const admin = createAdminClient()
   const { data } = await admin
     .from('meetings')
-    .select('id, group_id, scheduled_at, report_submitted_at, status, groups!inner(leader_id)')
+    .select('id, group_id, scheduled_at, report_submitted_at, status')
     .eq('id', meetingId)
     .single()
 
@@ -37,9 +31,8 @@ async function assertMeetingBelongsToLeader(
     scheduled_at: string
     report_submitted_at: string | null
     status: string
-    groups: { leader_id: string }
   }
-  if (row.groups.leader_id !== leaderId) return null
+  if (row.group_id !== callerGroupId) return null
   return {
     groupId: row.group_id,
     scheduledAt: row.scheduled_at,
@@ -53,9 +46,9 @@ export async function createMeeting(
   scheduledAt: string,
   notes: string
 ): Promise<ActionResult> {
-  const profile = await requireRole(['leader'])
-  const leaderGroupId = await getLeaderGroupId(profile.id)
-  if (!leaderGroupId || leaderGroupId !== groupId) {
+  const profile = await requireRole(['leader', 'cooperator'])
+  const callerGroupId = await getCallerGroupId(profile)
+  if (!callerGroupId || callerGroupId !== groupId) {
     return { error: 'GR não encontrado ou sem permissão.' }
   }
 
@@ -72,8 +65,8 @@ export async function createMeeting(
 }
 
 export async function cancelMeeting(meetingId: string): Promise<ActionResult> {
-  const profile = await requireRole(['leader'])
-  const meeting = await assertMeetingBelongsToLeader(meetingId, profile.id)
+  const profile = await requireRole(['leader', 'cooperator'])
+  const meeting = await assertMeetingBelongsToCaller(meetingId, profile)
   if (!meeting) return { error: 'Reunião não encontrada ou sem permissão.' }
   if (meeting.status !== 'scheduled') return { error: 'Apenas reuniões agendadas podem ser canceladas.' }
 
@@ -92,8 +85,8 @@ export async function saveDraftAttendance(
   meetingId: string,
   records: { personId: string; status: string }[]
 ): Promise<ActionResult> {
-  const profile = await requireRole(['leader'])
-  const meeting = await assertMeetingBelongsToLeader(meetingId, profile.id)
+  const profile = await requireRole(['leader', 'cooperator'])
+  const meeting = await assertMeetingBelongsToCaller(meetingId, profile)
   if (!meeting) return { error: 'Reunião não encontrada ou sem permissão.' }
   if (meeting.reportSubmittedAt) return { error: 'Relatório já enviado. Frequência bloqueada.' }
   if (meeting.status === 'cancelled') return { error: 'Reunião cancelada.' }
@@ -116,8 +109,8 @@ export async function saveDraftAttendance(
 }
 
 export async function submitReport(meetingId: string): Promise<ActionResult> {
-  const profile = await requireRole(['leader'])
-  const meeting = await assertMeetingBelongsToLeader(meetingId, profile.id)
+  const profile = await requireRole(['leader', 'cooperator'])
+  const meeting = await assertMeetingBelongsToCaller(meetingId, profile)
   if (!meeting) return { error: 'Reunião não encontrada ou sem permissão.' }
   if (meeting.reportSubmittedAt) return { error: 'Relatório já enviado.' }
   if (meeting.status === 'cancelled') return { error: 'Reunião cancelada.' }
