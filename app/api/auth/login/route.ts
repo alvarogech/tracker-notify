@@ -61,15 +61,16 @@ export async function POST(request: NextRequest) {
     .eq('id', user.id)
     .single()
 
-  if (process.env.DEBUG_LOGIN) {
-    console.log('[DEBUG login]', JSON.stringify({ userId: user.id, profile, profileError }))
-  }
-
   const typedProfile = profile as { role: UserRole; active: boolean } | null
 
-  const dest = !typedProfile?.active
+  let dest = !typedProfile?.active
     ? '/acesso-desativado'
     : redirectAfterLogin(typedProfile.role)
+
+  if (process.env.DEBUG_LOGIN) {
+    const debugPayload = JSON.stringify({ userId: user.id, profile, profileError: profileError?.message ?? null })
+    dest = `${dest}?debug=${encodeURIComponent(debugPayload)}`
+  }
 
   // Cria a resposta final e aplica todos os cookies coletados
   const response = NextResponse.redirect(new URL(dest, request.url), { status: 303 })
