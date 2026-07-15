@@ -25,8 +25,15 @@ export async function requireAuth(): Promise<UserProfile> {
   return profile
 }
 
+// Não delega para requireAuth() — Next.js 14 + runtime do Netlify tem um bug
+// conhecido em que redirect() lançado de dentro de uma função async aninhada
+// (função A chama await função B, que lança redirect()) às vezes não é
+// tratado corretamente e vira um erro genérico em vez de redirecionar. Manter
+// tudo num único nível (sem delegar para requireAuth) evita o padrão.
 export async function requireRole(allowed: UserRole[]): Promise<UserProfile> {
-  const profile = await requireAuth()
+  const profile = await getCurrentProfile()
+  if (!profile) redirect('/login')
+  if (!profile.active) redirect('/acesso-desativado')
   if (!allowed.includes(profile.role)) redirect('/login')
   return profile
 }
