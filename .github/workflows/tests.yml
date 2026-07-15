@@ -66,6 +66,7 @@ jobs:
       - name: Rodar testes E2E (Playwright)
         env:
           LEADER_SIGNUP_CODE: ci-teste
+          DEBUG_LOGIN: '1'
         run: pnpm exec playwright test
 
       - name: Publicar relatório do Playwright

@@ -55,11 +55,15 @@ export async function POST(request: NextRequest) {
   }
 
   const admin = createAdminClient()
-  const { data: profile } = await admin
+  const { data: profile, error: profileError } = await admin
     .from('profiles')
     .select('role, active')
     .eq('id', user.id)
     .single()
+
+  if (process.env.DEBUG_LOGIN) {
+    console.log('[DEBUG login]', JSON.stringify({ userId: user.id, profile, profileError }))
+  }
 
   const typedProfile = profile as { role: UserRole; active: boolean } | null
 
