@@ -3,19 +3,27 @@ import type { UserProfile, UserRole } from './types'
 import { redirect } from 'next/navigation'
 
 export async function getCurrentProfile(): Promise<UserProfile | null> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
+  try {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
 
-  // Usa admin client para evitar recursão infinita nas policies RLS de profiles
-  const admin = createAdminClient()
-  const { data } = await admin
-    .from('profiles')
-    .select('id, full_name, email, role, active, pending_approval')
-    .eq('id', user.id)
-    .single()
+    // Usa admin client para evitar recursão infinita nas policies RLS de profiles
+    const admin = createAdminClient()
+    const { data } = await admin
+      .from('profiles')
+      .select('id, full_name, email, role, active, pending_approval')
+      .eq('id', user.id)
+      .single()
 
-  return data as UserProfile | null
+    return data as UserProfile | null
+  } catch (e) {
+    // Next.js redige a mensagem de erro enviada ao navegador em produção — loga
+    // aqui, no servidor, para conseguir ver a causa real nos logs da Netlify.
+    // eslint-disable-next-line no-console
+    console.error('[getCurrentProfile] falhou:', e)
+    throw e
+  }
 }
 
 export async function requireAuth(): Promise<UserProfile> {
