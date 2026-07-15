@@ -1,24 +1,32 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import type { UserProfile, UserRole } from './types'
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import { withTimeout } from '@/lib/timeout'
 
-export async function getCurrentProfile(): Promise<UserProfile | null> {
-  const supabase = createClient()
+// middleware.ts já resolve a sessão e repassa o id via header — evita
+// chamar supabase.auth.getUser() de novo aqui, que dobraria a latência de
+// toda página protegida (cada chamada pode custar vários segundos quando o
+// Supabase Auth está lento). Header ausente (nunca passou pelo middleware,
+// ex. chamado de um Route Handler fora do matcher) cai no fallback abaixo.
+async function resolveUserId(): Promise<string | null> {
+  const fromMiddleware = headers().get('x-huios-user-id')
+  if (fromMiddleware !== null) return fromMiddleware || null
 
-  // supabase.auth.getUser() pode ficar lento/travar (mesmo problema do
-  // middleware.ts) — trata timeout como "sem sessão" em vez de deixar a
-  // function inteira estourar o orçamento de execução.
-  let user: { id: string } | null = null
+  const supabase = createClient()
   try {
     const { data } = await withTimeout(supabase.auth.getUser(), 8000)
-    user = data.user
+    return data.user?.id ?? null
   } catch (e) {
     // eslint-disable-next-line no-console
-    console.error('[getCurrentProfile] getUser() falhou ou expirou:', e)
+    console.error('[resolveUserId] getUser() falhou ou expirou:', e)
     return null
   }
-  if (!user) return null
+}
+
+export async function getCurrentProfile(): Promise<UserProfile | null> {
+  const userId = await resolveUserId()
+  if (!userId) return null
 
   try {
     // Usa admin client para evitar recursão infinita nas policies RLS de profiles
@@ -26,7 +34,7 @@ export async function getCurrentProfile(): Promise<UserProfile | null> {
     const { data } = await admin
       .from('profiles')
       .select('id, full_name, email, role, active, pending_approval')
-      .eq('id', user.id)
+      .eq('id', userId)
       .single()
 
     return data as UserProfile | null
