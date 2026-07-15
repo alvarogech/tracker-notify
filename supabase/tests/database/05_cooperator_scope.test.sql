@@ -105,11 +105,17 @@ SELECT throws_ok(
 );
 
 -- cooperador não pode alterar o próprio escopo (group_helpers é gerido só
--- por líder/coordenação/admin)
-SELECT throws_ok(
-  $$ UPDATE group_helpers SET group_id = '20000000-0000-0000-0000-000000000002'
-     WHERE profile_id = '00000000-0000-0000-0000-000000000008' $$,
-  '42501'
+-- por líder/coordenação/admin). RLS em UPDATE não lança exceção quando a
+-- linha fica invisível ao USING da policy — só atualiza 0 linhas em
+-- silêncio (diferente de INSERT, onde o WITH CHECK falhando lança 42501) —
+-- por isso a verificação aqui é no estado final da linha, não em throws_ok.
+UPDATE group_helpers SET group_id = '20000000-0000-0000-0000-000000000002'
+  WHERE profile_id = '00000000-0000-0000-0000-000000000008';
+
+SELECT is(
+  (SELECT group_id::text FROM group_helpers WHERE profile_id = '00000000-0000-0000-0000-000000000008'),
+  '20000000-0000-0000-0000-000000000001',
+  'cooperador não conseguiu alterar o próprio group_id via UPDATE direto — GR permanece Norte'
 );
 
 SELECT * FROM finish();

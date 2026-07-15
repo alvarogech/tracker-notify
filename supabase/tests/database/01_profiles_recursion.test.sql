@@ -45,8 +45,8 @@ SELECT lives_ok(
 
 SELECT is(
   (SELECT count(*)::int FROM profiles),
-  7,
-  'coordenador: enxerga todos os 7 perfis semeados (profiles_coordinator_read)'
+  8,
+  'coordenador: enxerga todos os 8 perfis semeados (profiles_coordinator_read)'
 );
 
 -- ============================================================
@@ -66,8 +66,8 @@ SELECT lives_ok(
 
 SELECT is(
   (SELECT count(*)::int FROM profiles),
-  7,
-  'admin: enxerga todos os 7 perfis semeados (profiles_admin_write cobre SELECT via FOR ALL)'
+  8,
+  'admin: enxerga todos os 8 perfis semeados (profiles_admin_write cobre SELECT via FOR ALL)'
 );
 
 -- ============================================================
