@@ -41,7 +41,7 @@ interface MeetingRow {
 }
 
 export default async function AdminPage() {
-  await requireRole(['admin'])
+  const profile = await requireRole(['admin'])
   const supabase = createClient()
 
   const [groupsRes, relationshipsRes, visitsRes, casesRes, meetingsRes, pendingRes] = await Promise.all([
@@ -87,7 +87,7 @@ export default async function AdminPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-xl font-bold">Painel Administrativo</h1>
+        <h1 className="text-xl font-bold">Olá, {profile.full_name.split(' ')[0]}</h1>
         <p className="text-sm text-muted-foreground">Visão consolidada de toda a rede HUIOS</p>
       </div>
 

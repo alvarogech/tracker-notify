@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { requireRole } from '@/lib/auth/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import type { UserProfile } from '@/lib/auth/types'
 import { ArrowLeft } from 'lucide-react'
 import { PersonInfoCard } from '@/components/people/PersonInfoCard'
@@ -67,6 +67,13 @@ function sortDisciplerOptions(rows: DisciplerOptionRow[], priorityIds: Set<strin
   return [...priority, ...rest]
 }
 
+// Pastores da rede — sempre no topo da lista, à frente até de
+// líderes/cooperadores, em qualquer GR (fase 12).
+const NETWORK_PASTOR_IDS = [
+  '50000000-0000-0000-0000-000000000001',
+  '50000000-0000-0000-0000-000000000002',
+]
+
 // Coordenação/admin veem a rede inteira (líderes/cooperadores ativos primeiro,
 // depois o resto); líder comum vê só pessoas do próprio GR (líderes fora do
 // próprio GR nunca aparecem — CLAUDE.md 7, líder não visualiza outros GRs).
@@ -75,6 +82,15 @@ async function getDisciplerOptions(
   profile: UserProfile,
   ownGroupId: string | null
 ): Promise<DisciplerOptionRow[]> {
+  // Admin client: pastores da rede não têm group_relationships em nenhum GR,
+  // então o cliente escopado por RLS do líder nunca os enxergaria.
+  const pastorsRes = await createAdminClient().from('people').select('id, full_name').in('id', NETWORK_PASTOR_IDS)
+  const pastors = ((pastorsRes.data ?? []) as { id: string; full_name: string }[]).map((p) => ({
+    id: p.id,
+    fullName: p.full_name,
+  }))
+  const pastorIds = new Set(pastors.map((p) => p.id))
+
   if (profile.role === 'coordinator' || profile.role === 'admin') {
     const [peopleRes, leaderRes, cooperatorRes] = await Promise.all([
       supabase.from('people').select('id, full_name').is('archived_at', null),
@@ -85,11 +101,10 @@ async function getDisciplerOptions(
       ...((leaderRes.data ?? []) as { person_id: string }[]).map((r) => r.person_id),
       ...((cooperatorRes.data ?? []) as { person_id: string }[]).map((r) => r.person_id),
     ])
-    const rows = ((peopleRes.data ?? []) as { id: string; full_name: string }[]).map((p) => ({
-      id: p.id,
-      fullName: p.full_name,
-    }))
-    return sortDisciplerOptions(rows, priorityIds)
+    const rows = ((peopleRes.data ?? []) as { id: string; full_name: string }[])
+      .filter((p) => !pastorIds.has(p.id))
+      .map((p) => ({ id: p.id, fullName: p.full_name }))
+    return [...pastors, ...sortDisciplerOptions(rows, priorityIds)]
   }
 
   if (profile.role === 'leader' && ownGroupId) {
@@ -105,12 +120,12 @@ async function getDisciplerOptions(
     const rows = (
       (relRes.data ?? []) as unknown as { person_id: string; person: { id: string; full_name: string } | null }[]
     )
-      .filter((r) => r.person)
+      .filter((r) => r.person && !pastorIds.has(r.person.id))
       .map((r) => ({ id: r.person!.id, fullName: r.person!.full_name }))
-    return sortDisciplerOptions(rows, priorityIds)
+    return [...pastors, ...sortDisciplerOptions(rows, priorityIds)]
   }
 
-  return []
+  return pastors
 }
 
 interface TrainingProgramRow {

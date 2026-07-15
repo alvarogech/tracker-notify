@@ -359,6 +359,12 @@ Além dos 12, o painel da coordenação expõe "Casos escalados" (contagem de `p
 **Decisão:** (1) Catálogo `ministry_areas` substituído por completo: Velos, Áreas Executivas, Sobrenatural, EPL, Ekballo, Adoração, Raízes — no lugar de Acolhimento/Louvor/Mídia e Som/Infantil/Intercessão/Comunicação/Limpeza e Organização/Recepção. A migration renomeia 7 das 8 linhas antigas no próprio lugar (preserva `id`, então nenhum `service_assignments` existente perde a referência); a 8ª ("Recepção") é removida, redirecionando primeiro qualquer vínculo que ainda apontasse para ela para "Velos" (evita deixar uma FK quebrada). (2) O painel na tela da pessoa (`ServiceAssignmentsPanel.tsx`) passa de card título "Serviço" para "Grupos de Atuação", e os rótulos de indicador "Com vínculo de serviço ativo" (`/inicio`, `/coordenacao`, `/coordenacao/[id]`) viram "Com grupo de atuação ativo". (3) Multi-seleção: o formulário de "Iniciar novo vínculo" trocou de um único `<select>` + botão "Iniciar" (um vínculo por vez) para uma lista de checkboxes — pode marcar vários grupos de atuação e enviar tudo numa única ação (`startServiceAssignments(personId, ministryAreaIds[])`, que insere um `service_assignments` por área selecionada). O schema já suportava múltiplos vínculos simultâneos por pessoa (nenhum índice único ativo, ao contrário de discipulado/anfitrião) — a mudança foi só de UI/Server Action, sem alteração de tabela para viabilizar isso.
 **Motivo:** Pedido do responsável pelo produto.
 
+### DEC-055 — Pastores da rede na lista de discipuladores; painel do admin com saudação pessoal
+
+**Data:** 2026-07-15
+**Decisão:** (1) Dois registros fixos em `people` (Álvaro Henrique, Larissa Andrade — "pastores da rede") aparecem sempre no topo da lista de discipuladores disponíveis, à frente até de líderes/cooperadores, em qualquer GR — buscados via admin client porque não têm `group_relationships` em nenhum GR (o cliente escopado por RLS do líder nunca os enxergaria). (2) `/admin` agora cumprimenta pelo primeiro nome do perfil logado ("Olá, {nome}") em vez do genérico "Painel Administrativo" — usa `profile.full_name` de quem estiver logado, sem hardcode, então acompanha o que a pessoa configurar em `/admin/configuracoes`.
+**Motivo:** Pedido do responsável pelo produto.
+
 ---
 
 ## Decisões Pendentes
