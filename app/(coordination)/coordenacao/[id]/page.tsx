@@ -383,7 +383,11 @@ export default async function GroupDetailPage({ params }: { params: { id: string
             .map((m) => {
               const present = m.attendance_records.filter((ar) => ar.status === 'present').length
               return (
-                <div key={m.id} className="flex items-center justify-between rounded-xl border bg-card px-4 py-3">
+                <Link
+                  key={m.id}
+                  href={`/coordenacao/${group.id}/reunioes/${m.id}`}
+                  className="flex items-center justify-between rounded-xl border bg-card px-4 py-3 transition-colors hover:bg-accent"
+                >
                   <span className="text-sm">{formatDate(m.scheduled_at)}</span>
                   <div className="flex items-center gap-2">
                     {m.status === 'completed' && (
@@ -398,7 +402,7 @@ export default async function GroupDetailPage({ params }: { params: { id: string
                       {m.status === 'completed' ? 'Concluída' : m.status === 'cancelled' ? 'Cancelada' : 'Agendada'}
                     </Badge>
                   </div>
-                </div>
+                </Link>
               )
             })}
           {meetings.length === 0 && (
