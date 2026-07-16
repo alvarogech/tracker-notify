@@ -24,8 +24,8 @@ export const metadata: Metadata = {
     'Ferramenta interna de apoio ao pastoreio, discipulado e formação da rede HUIOS — Igreja Emaús.',
   manifest: '/manifest.json',
   icons: {
-    icon: '/favicon.svg',
-    apple: '/brand/app-icon-192.png',
+    icon: '/favicon.png',
+    apple: '/brand/apple-touch-icon.png',
   },
   appleWebApp: {
     title: 'Pastoreio',

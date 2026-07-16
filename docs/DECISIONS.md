@@ -402,6 +402,12 @@ Além dos 12, o painel da coordenação expõe "Casos escalados" (contagem de `p
 **Decisão:** Nova linha em `ministry_areas`: "Mídia".
 **Motivo:** Pedido do responsável pelo produto.
 
+### DEC-062 — Ícone da aba/app substituído pela logo oficial HUIOS
+
+**Data:** 2026-07-16
+**Decisão:** O favicon/ícone de app (o mesmo mostrado na aba do navegador e ao adicionar o site à tela inicial do celular) era um monograma placeholder "Hi" (`public/favicon.svg`, removido). Substituído pela logo oficial fornecida pelo responsável pelo produto — gerada em `public/brand/` nos tamanhos padrão (`favicon.png` 32×32, `apple-touch-icon.png` 180×180, `app-icon-192.png` e `app-icon-512.png` para o manifest PWA/Android), com fundo verde-escuro preenchido a partir da própria imagem para manter proporção quadrada sem distorcer a marca. `app/layout.tsx` e `public/manifest.json` atualizados para apontar para os novos arquivos. De quebra, corrigido um 404 pré-existente: `apple-touch-icon` já apontava para `/brand/app-icon-192.png`, mas esse arquivo nunca tinha existido no repositório.
+**Motivo:** Pedido do responsável pelo produto.
+
 ---
 
 ## Decisões Pendentes
